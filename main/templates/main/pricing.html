@@ -1,0 +1,98 @@
+{% extends 'main/base.html' %}
+
+{% block title %}Pricing - Dally{% endblock %}
+
+{% block content %}
+<section class="section">
+    <div class="container">
+        <h1 class="page-title">Simple, Transparent Pricing</h1>
+        <p class="page-subtitle">Start free. Upgrade when you need more.</p>
+        
+        <div class="pricing-grid">
+            <!-- Free Plan -->
+            <div class="pricing-card">
+                <div class="pricing-header">
+                    <h3 class="pricing-title">Free</h3>
+                    <div class="pricing-price">
+                        <span class="price-amount">₦0</span>
+                        <span class="price-period">/month</span>
+                    </div>
+                </div>
+                <ul class="pricing-features">
+                    <li class="feature-item">✓ Daily income & expense entries</li>
+                    <li class="feature-item">✓ Itemized transactions</li>
+                    <li class="feature-item">✓ Daily cash summaries</li>
+                    <li class="feature-item">✓ Date range reports</li>
+                    <li class="feature-item">✓ Profit & loss statements</li>
+                    <li class="feature-item">✓ Works offline</li>
+                    <li class="feature-item">✓ Basic tax estimates</li>
+                </ul>
+                <a href="#waitlist" class="btn btn-outline">Join Waitlist</a>
+            </div>
+
+            <!-- Pro Plan (Coming Soon) -->
+            <div class="pricing-card pricing-card-featured">
+                <div class="pricing-badge">Coming Soon</div>
+                <div class="pricing-header">
+                    <h3 class="pricing-title">Pro</h3>
+                    <div class="pricing-price">
+                        <span class="price-amount">₦2,500</span>
+                        <span class="price-period">/month</span>
+                    </div>
+                </div>
+                <ul class="pricing-features">
+                    <li class="feature-item">✓ Everything in Free</li>
+                    <li class="feature-item">✓ Official tax-ready reports</li>
+                    <li class="feature-item">✓ Export to PDF/Excel</li>
+                    <li class="feature-item">✓ Multi-year comparisons</li>
+                    <li class="feature-item">✓ Priority support</li>
+                    <li class="feature-item">✓ Early access to new features</li>
+                </ul>
+                <button class="btn btn-primary" disabled>Coming Soon</button>
+            </div>
+        </div>
+
+        <div class="pricing-faq">
+            <h2 class="section-title">Frequently Asked Questions</h2>
+            <div class="faq-accordion">
+                <div class="faq-accordion-item">
+                    <button class="faq-accordion-button">
+                        <span class="faq-question">Do I need a credit card to start?</span>
+                        <span class="faq-icon">+</span>
+                    </button>
+                    <div class="faq-accordion-content">
+                        <p class="faq-answer">No. The free plan is completely free. No credit card required.</p>
+                    </div>
+                </div>
+                <div class="faq-accordion-item">
+                    <button class="faq-accordion-button">
+                        <span class="faq-question">Can I try Pro before paying?</span>
+                        <span class="faq-icon">+</span>
+                    </button>
+                    <div class="faq-accordion-content">
+                        <p class="faq-answer">Yes! We'll offer a 14-day free trial when Pro launches.</p>
+                    </div>
+                </div>
+                <div class="faq-accordion-item">
+                    <button class="faq-accordion-button">
+                        <span class="faq-question">What payment methods do you accept?</span>
+                        <span class="faq-icon">+</span>
+                    </button>
+                    <div class="faq-accordion-content">
+                        <p class="faq-answer">We'll accept cards, bank transfers, and mobile money when Pro launches.</p>
+                    </div>
+                </div>
+                <div class="faq-accordion-item">
+                    <button class="faq-accordion-button">
+                        <span class="faq-question">Can I cancel anytime?</span>
+                        <span class="faq-icon">+</span>
+                    </button>
+                    <div class="faq-accordion-content">
+                        <p class="faq-answer">Yes. Cancel your Pro subscription anytime. Your data stays accessible on the free plan.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

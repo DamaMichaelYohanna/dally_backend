@@ -1,0 +1,171 @@
+{% extends 'main/base.html' %}
+{% load static %}
+
+{% block content %}
+<!-- Hero Section -->
+<section class="hero">
+    <div class="container">
+        <div class="hero-content">
+            <h1 class="hero-title">Simple daily records for Nigerian businesses</h1>
+            <p class="hero-subtitle">Track sales, expenses, and tax estimates — even offline.</p>
+            <a href="#waitlist" class="btn btn-hero">Join the Waitlist</a>
+        </div>
+    </div>
+</section>
+
+<!-- Features Section -->
+<section class="section">
+    <div class="container">
+        <h2 class="section-title">Everything you need to track your business</h2>
+        <div class="features-grid">
+            <div class="feature-card">
+                <div class="feature-icon">📝</div>
+                <h3 class="feature-title">Daily Income & Expense Tracking</h3>
+                <p class="feature-text">Record sales and purchases with itemized breakdowns. Know exactly where your money goes.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">📊</div>
+                <h3 class="feature-title">Profit & Loss Summaries</h3>
+                <p class="feature-text">See your daily cash flow, monthly totals, and profit margins at a glance.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">🇳🇬</div>
+                <h3 class="feature-title">Nigeria Tax Estimates (2026-Ready)</h3>
+                <p class="feature-text">Get PIT and VAT calculations based on Nigeria Tax Act 2025. No surprises at tax time.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">📱</div>
+                <h3 class="feature-title">Works Offline</h3>
+                <p class="feature-text">No internet? No problem. Record transactions anytime, sync when you're back online.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">₦</div>
+                <h3 class="feature-title">Built for Naira</h3>
+                <p class="feature-text">All amounts in Nigerian Naira. No confusing currency conversions.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">💬</div>
+                <h3 class="feature-title">Simple Like WhatsApp</h3>
+                <p class="feature-text">If you can use WhatsApp, you can use Dally. No accounting jargon.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- How It Works -->
+<section class="section section-gray">
+    <div class="container">
+        <h2 class="section-title">How it works</h2>
+        <div class="steps-grid">
+            <div class="step-card">
+                <div class="step-number">1</div>
+                <h3 class="step-title">Record Sales & Expenses</h3>
+                <p class="step-text">Add transactions as they happen. Itemize each sale or purchase for accuracy.</p>
+            </div>
+            <div class="step-card">
+                <div class="step-number">2</div>
+                <h3 class="step-title">See Daily Cash Summary</h3>
+                <p class="step-text">Check your income, expenses, and net cash flow every day.</p>
+            </div>
+            <div class="step-card">
+                <div class="step-number">3</div>
+                <h3 class="step-title">Generate Tax-Ready Reports</h3>
+                <p class="step-text">Export summaries for your accountant or FIRS compliance.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Testimonials Section -->
+<section class="section section-gray">
+    <div class="container">
+        <h2 class="section-title">Why Nigerian business owners love Dally</h2>
+        <p class="page-subtitle">Join thousands of entrepreneurs who have simplified their bookkeeping</p>
+        <div class="testimonials-grid">
+            <div class="testimonial-card">
+                <div class="testimonial-quote">"</div>
+                <p class="testimonial-text">Before Dally, I was using notebooks and losing track of expenses. Now I can see my profit instantly and know exactly what I owe FIRS. Game changer for my shop!</p>
+                <div class="testimonial-author">
+                    <div class="testimonial-avatar">A</div>
+                    <div>
+                        <div class="testimonial-name">Amina Bello</div>
+                        <div class="testimonial-role">Retail Shop Owner, Kano</div>
+                    </div>
+                </div>
+            </div>
+            <div class="testimonial-card">
+                <div class="testimonial-quote">"</div>
+                <p class="testimonial-text">The tax estimates are so helpful. I no longer get surprised by my tax bill. I can plan ahead and save properly. Plus it works offline when I'm in the market!</p>
+                <div class="testimonial-author">
+                    <div class="testimonial-avatar">C</div>
+                    <div>
+                        <div class="testimonial-name">Chidi Okafor</div>
+                        <div class="testimonial-role">Food Business, Lagos</div>
+                    </div>
+                </div>
+            </div>
+            <div class="testimonial-card">
+                <div class="testimonial-quote">"</div>
+                <p class="testimonial-text">Simple, clean, and actually made for Nigerian businesses. I tried other apps but they were too complicated. Dally just works.</p>
+                <div class="testimonial-author">
+                    <div class="testimonial-avatar">F</div>
+                    <div>
+                        <div class="testimonial-name">Fatima Ibrahim</div>
+                        <div class="testimonial-role">Trading Business, Abuja</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Trust Section -->
+<section class="section">
+    <div class="container">
+        <div class="trust-box">
+            <h2 class="section-title">What Dally is (and isn't)</h2>
+            <div class="trust-grid">
+                <div class="trust-item">
+                    <span class="trust-icon">✓</span>
+                    <p><strong>Not a bank.</strong> We don't hold your money. We just help you track it.</p>
+                </div>
+                <div class="trust-item">
+                    <span class="trust-icon">✓</span>
+                    <p><strong>Not a tax filing service.</strong> We provide estimates. You still need to file with FIRS.</p>
+                </div>
+                <div class="trust-item">
+                    <span class="trust-icon">✓</span>
+                    <p><strong>Your data stays yours.</strong> NDPR-compliant. We never sell your information.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Waitlist Section -->
+<section id="waitlist" class="section section-primary">
+    <div class="container">
+        <div class="waitlist-box">
+            <h2 class="waitlist-title">Get Early Access</h2>
+            <p class="waitlist-subtitle">Join the waitlist and be the first to try Dally when we launch.</p>
+            
+            <form method="post" action="{% url 'main:waitlist_signup' %}" class="waitlist-form">
+                {% csrf_token %}
+                <div class="form-group">
+                    {{ form.email }}
+                    {% if form.email.errors %}
+                        <div class="form-error">{{ form.email.errors.0 }}</div>
+                    {% endif %}
+                </div>
+                <div class="form-group">
+                    {{ form.business_type }}
+                    {% if form.business_type.errors %}
+                        <div class="form-error">{{ form.business_type.errors.0 }}</div>
+                    {% endif %}
+                </div>
+                <button type="submit" class="btn btn-submit">Get Early Access</button>
+            </form>
+        </div>
+    </div>
+</section>
+{% endblock %}
