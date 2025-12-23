@@ -44,6 +44,7 @@ INSTALLED_APPS = [
     'drf_spectacular',
     'account.apps.AccountConfig',
     'bookkeeping.apps.BookkeepingConfig',
+    'main.apps.MainConfig',
 ]
 
 MIDDLEWARE = [

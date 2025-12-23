@@ -40,6 +40,8 @@ urlpatterns = [
     # API Endpoints
     path('api/auth/', include('account.urls')),
     path('api/', include('bookkeeping.urls')),
+    # Landing Website
+    path('', include('main.urls')),
 ]
 
 # Serve static files in development
