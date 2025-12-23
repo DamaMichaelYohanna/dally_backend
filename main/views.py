@@ -46,7 +46,7 @@ def waitlist_signup(request):
             request,
             "Thanks! We'll notify you when Dally is ready."
         )
-        return redirect('home')
+        return redirect('main:home')
     else:
         # Return to home with errors
         messages.error(

@@ -3,115 +3,196 @@
 
 {% block content %}
 <!-- Hero Section -->
-<section class="hero">
+<section class="hero-section">
     <div class="container">
-        <div class="hero-content">
-            <h1 class="hero-title">Simple daily records for Nigerian businesses</h1>
-            <p class="hero-subtitle">Track sales, expenses, and tax estimates — even offline.</p>
-            <a href="#waitlist" class="btn btn-hero">Join the Waitlist</a>
+        <div class="row justify-content-center container">
+            <div class="col-md-7 mb-4 mb-md-0">
+                <h2 class="display-6 display-md-4 fw-bold mb-4 mt-5" style="color: rgb(54, 51, 51); font-family: 'Cinzel', serif;
+  font-optical-sizing: auto;">Simple daily records <span style="color:#2890a7">for Nigerian businesses</span></h2>
+                <p class="lead mb-4" style="color:black">Track your sales, expenses, and tax estimates with ease. Stay on top of your business finances — even when you're offline.</p>
+                <a href="#waitlist" class="btn btn-primary-green btn-lg px-5 py-3 w-100 w-md-auto">Join the Waitlist</a>
+            </div>
+            <div class="col-md-5 text-center">
+                <img src="{% static 'images/phone.png' %}" alt="Image of Dally app on phone" class="img-fluid w-100 w-md-60">
+            </div>
         </div>
     </div>
 </section>
 
 <!-- Features Section -->
-<section class="section">
-    <div class="container">
-        <h2 class="section-title">Everything you need to track your business</h2>
-        <div class="features-grid">
-            <div class="feature-card">
-                <div class="feature-icon">📝</div>
-                <h3 class="feature-title">Daily Income & Expense Tracking</h3>
-                <p class="feature-text">Record sales and purchases with itemized breakdowns. Know exactly where your money goes.</p>
+<section class="py-5">
+    <div class="container py-4">
+        <h2 class="text-center fw-bold mb-5 display-6"><span style="color: #2890a7;">Everything You </span>Need to Track Your Business</h2>
+        <div class="row g-4">
+            <div class="col-md-6 col-lg-4">
+                <div class="card h-100 border-0 feature-card">
+                    <div class="card-body p-4">
+                        <div class="d-flex align-items-start">
+                            <div class="feature-icon me-3 flex-shrink-0">
+                                <i class="fas fa-clipboard-list"></i>
+                            </div>
+                            <div>
+                                <h3 class="h5 fw-bold mb-3">Daily Income & Expense Tracking</h3>
+                                <p class="text-muted mb-0">Record sales and purchases with itemized breakdowns. Know exactly where your money goes.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
-            <div class="feature-card">
-                <div class="feature-icon">📊</div>
-                <h3 class="feature-title">Profit & Loss Summaries</h3>
-                <p class="feature-text">See your daily cash flow, monthly totals, and profit margins at a glance.</p>
+            <div class="col-md-6 col-lg-4">
+                <div class="card h-100 border-0 feature-card">
+                    <div class="card-body p-4">
+                        <div class="d-flex align-items-start">
+                            <div class="feature-icon me-3 flex-shrink-0">
+                                <i class="fas fa-chart-line"></i>
+                            </div>
+                            <div>
+                                <h3 class="h5 fw-bold mb-3">Profit & Loss Summaries</h3>
+                                <p class="text-muted mb-0">See your daily cash flow, monthly totals, and profit margins at a glance.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
-            <div class="feature-card">
-                <div class="feature-icon">🇳🇬</div>
-                <h3 class="feature-title">Nigeria Tax Estimates (2026-Ready)</h3>
-                <p class="feature-text">Get PIT and VAT calculations based on Nigeria Tax Act 2025. No surprises at tax time.</p>
+            <div class="col-md-6 col-lg-4">
+                <div class="card h-100 border-0 feature-card">
+                    <div class="card-body p-4">
+                        <div class="d-flex align-items-start">
+                            <div class="feature-icon me-3 flex-shrink-0">
+                                <i class="fas fa-calculator"></i>
+                            </div>
+                            <div>
+                                <h3 class="h5 fw-bold mb-3">Nigeria Tax Estimates (2026-Ready)</h3>
+                                <p class="text-muted mb-0">Get PIT and VAT calculations based on Nigeria Tax Act 2025. No surprises at tax time.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
-            <div class="feature-card">
-                <div class="feature-icon">📱</div>
-                <h3 class="feature-title">Works Offline</h3>
-                <p class="feature-text">No internet? No problem. Record transactions anytime, sync when you're back online.</p>
+            <div class="col-md-6 col-lg-4">
+                <div class="card h-100 border-0 feature-card">
+                    <div class="card-body p-4">
+                        <div class="d-flex align-items-start">
+                            <div class="feature-icon me-3 flex-shrink-0">
+                                <i class="fas fa-wifi"></i>
+                            </div>
+                            <div>
+                                <h3 class="h5 fw-bold mb-3">Works Offline</h3>
+                                <p class="text-muted mb-0">No internet? No problem. Record transactions anytime, sync when you're back online.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
-            <div class="feature-card">
-                <div class="feature-icon">₦</div>
-                <h3 class="feature-title">Built for Naira</h3>
-                <p class="feature-text">All amounts in Nigerian Naira. No confusing currency conversions.</p>
+            <div class="col-md-6 col-lg-4">
+                <div class="card h-100 border-0 feature-card">
+                    <div class="card-body p-4">
+                        <div class="d-flex align-items-start">
+                            <div class="feature-icon me-3 flex-shrink-0">
+                                <i class="fas fa-naira-sign"></i>
+                            </div>
+                            <div>
+                                <h3 class="h5 fw-bold mb-3">Built for Naira</h3>
+                                <p class="text-muted mb-0">All amounts in Nigerian Naira. No confusing currency conversions.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
-            <div class="feature-card">
-                <div class="feature-icon">💬</div>
-                <h3 class="feature-title">Simple Like WhatsApp</h3>
-                <p class="feature-text">If you can use WhatsApp, you can use Dally. No accounting jargon.</p>
+            <div class="col-md-6 col-lg-4">
+                <div class="card h-100 border-0 feature-card">
+                    <div class="card-body p-4">
+                        <div class="d-flex align-items-start">
+                            <div class="feature-icon me-3 flex-shrink-0">
+                                <i class="fab fa-whatsapp"></i>
+                            </div>
+                            <div>
+                                <h3 class="h5 fw-bold mb-3">Simple Like WhatsApp</h3>
+                                <p class="text-muted mb-0">If you can use WhatsApp, you can use Dally. No accounting jargon.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
 </section>
 
 <!-- How It Works -->
-<section class="section section-gray">
-    <div class="container">
-        <h2 class="section-title">How it works</h2>
-        <div class="steps-grid">
-            <div class="step-card">
-                <div class="step-number">1</div>
-                <h3 class="step-title">Record Sales & Expenses</h3>
-                <p class="step-text">Add transactions as they happen. Itemize each sale or purchase for accuracy.</p>
+<section class="py-5" style="background-image:url(/static/images/welcome.webp) ">
+    <div class="container py-4">
+        <h2 class="text-center fw-bold mb-5">How it works</h2>
+        <div class="row g-4">
+            <div class="col-md-4 text-center">
+                <div class="step-number mx-auto mb-3">1</div>
+                <h3 class="h5 fw-bold mb-3">Record Sales & Expenses</h3>
+                <p class="text-muted">Add transactions as they happen. Itemize each sale or purchase for accuracy.</p>
             </div>
-            <div class="step-card">
-                <div class="step-number">2</div>
-                <h3 class="step-title">See Daily Cash Summary</h3>
-                <p class="step-text">Check your income, expenses, and net cash flow every day.</p>
+            <div class="col-md-4 text-center">
+                <div class="step-number mx-auto mb-3">2</div>
+                <h3 class="h5 fw-bold mb-3">See Daily Cash Summary</h3>
+                <p class="text-muted">Check your income, expenses, and net cash flow every day, every month and the whole year.</p>
             </div>
-            <div class="step-card">
-                <div class="step-number">3</div>
-                <h3 class="step-title">Generate Tax-Ready Reports</h3>
-                <p class="step-text">Export summaries for your accountant or FIRS compliance.</p>
+            <div class="col-md-4 text-center">
+                <div class="step-number mx-auto mb-3">3</div>
+                <h3 class="h5 fw-bold mb-3">Generate Tax-Ready Reports</h3>
+                <p class="text-muted">Export summaries for your accountant or FIRS compliance ensuring accuracy and transparency.</p>
             </div>
         </div>
     </div>
 </section>
 
 <!-- Testimonials Section -->
-<section class="section section-gray">
-    <div class="container">
-        <h2 class="section-title">Why Nigerian business owners love Dally</h2>
-        <p class="page-subtitle">Join thousands of entrepreneurs who have simplified their bookkeeping</p>
-        <div class="testimonials-grid">
-            <div class="testimonial-card">
-                <div class="testimonial-quote">"</div>
-                <p class="testimonial-text">Before Dally, I was using notebooks and losing track of expenses. Now I can see my profit instantly and know exactly what I owe FIRS. Game changer for my shop!</p>
-                <div class="testimonial-author">
-                    <div class="testimonial-avatar">A</div>
-                    <div>
-                        <div class="testimonial-name">Amina Bello</div>
-                        <div class="testimonial-role">Retail Shop Owner, Kano</div>
+<section class="py-5">
+    <div class="container py-4">
+        <h2 class="text-center fw-bold mb-3">Why Nigerian business owners love Dally</h2>
+        <p class="text-center text-muted mb-5">Join thousands of entrepreneurs who have simplified their bookkeeping</p>
+        <div class="row g-4">
+            <div class="col-md-4">
+                <div class="card h-100 border-0 shadow-sm">
+                    <div class="card-body p-4">
+                        <div class="testimonial-quote">"</div>
+                        <p class="fst-italic mb-4">Before Dally, I was using notebooks and losing track of expenses. Now I can see my profit instantly and know exactly what I owe FIRS. Game changer for my shop!</p>
+                        <hr>
+                        <div class="d-flex align-items-center">
+                            <div class="testimonial-avatar me-3">A</div>
+                            <div>
+                                <div class="fw-bold">Amina Bello</div>
+                                <small class="text-muted">Retail Shop Owner, Kano</small>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
-            <div class="testimonial-card">
-                <div class="testimonial-quote">"</div>
-                <p class="testimonial-text">The tax estimates are so helpful. I no longer get surprised by my tax bill. I can plan ahead and save properly. Plus it works offline when I'm in the market!</p>
-                <div class="testimonial-author">
-                    <div class="testimonial-avatar">C</div>
-                    <div>
-                        <div class="testimonial-name">Chidi Okafor</div>
-                        <div class="testimonial-role">Food Business, Lagos</div>
+            <div class="col-md-4">
+                <div class="card h-100 border-0 shadow-sm">
+                    <div class="card-body p-4">
+                        <div class="testimonial-quote">"</div>
+                        <p class="fst-italic mb-4">The tax estimates are so helpful. I no longer get surprised by my tax bill. I can plan ahead and save properly. Plus it works offline when I'm in the market!</p>
+                        <hr>
+                        <div class="d-flex align-items-center">
+                            <div class="testimonial-avatar me-3">C</div>
+                            <div>
+                                <div class="fw-bold">Chidi Okafor</div>
+                                <small class="text-muted">Food Business, Lagos</small>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
-            <div class="testimonial-card">
-                <div class="testimonial-quote">"</div>
-                <p class="testimonial-text">Simple, clean, and actually made for Nigerian businesses. I tried other apps but they were too complicated. Dally just works.</p>
-                <div class="testimonial-author">
-                    <div class="testimonial-avatar">F</div>
-                    <div>
-                        <div class="testimonial-name">Fatima Ibrahim</div>
-                        <div class="testimonial-role">Trading Business, Abuja</div>
+            <div class="col-md-4">
+                <div class="card h-100 border-0 shadow-sm">
+                    <div class="card-body p-4">
+                        <div class="testimonial-quote">"</div>
+                        <p class="fst-italic mb-4">Simple, clean, and actually made for Nigerian businesses. I tried other apps but they were too complicated. Dally just works.</p>
+                        <hr>
+                        <div class="d-flex align-items-center">
+                            <div class="testimonial-avatar me-3">F</div>
+                            <div>
+                                <div class="fw-bold">Fatima Ibrahim</div>
+                                <small class="text-muted">Trading Business, Abuja</small>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -120,22 +201,32 @@
 </section>
 
 <!-- Trust Section -->
-<section class="section">
-    <div class="container">
-        <div class="trust-box">
-            <h2 class="section-title">What Dally is (and isn't)</h2>
-            <div class="trust-grid">
-                <div class="trust-item">
-                    <span class="trust-icon">✓</span>
-                    <p><strong>Not a bank.</strong> We don't hold your money. We just help you track it.</p>
+<section class="py-5 bg-light">
+    <div class="container py-4">
+        <h2 class="text-center fw-bold mb-5">What Dally is (and isn't)</h2>
+        <div class="row g-4">
+            <div class="col-md-4">
+                <div class="d-flex">
+                    <div class="text-success fs-4 me-3">✓</div>
+                    <div>
+                        <p class="mb-0"><strong>Not a bank.</strong> We don't hold your money. We just help you track it.</p>
+                    </div>
                 </div>
-                <div class="trust-item">
-                    <span class="trust-icon">✓</span>
-                    <p><strong>Not a tax filing service.</strong> We provide estimates. You still need to file with FIRS.</p>
+            </div>
+            <div class="col-md-4">
+                <div class="d-flex">
+                    <div class="text-success fs-4 me-3">✓</div>
+                    <div>
+                        <p class="mb-0"><strong>Not a tax filing service.</strong> We provide estimates. You still need to file with FIRS.</p>
+                    </div>
                 </div>
-                <div class="trust-item">
-                    <span class="trust-icon">✓</span>
-                    <p><strong>Your data stays yours.</strong> NDPR-compliant. We never sell your information.</p>
+            </div>
+            <div class="col-md-4">
+                <div class="d-flex">
+                    <div class="text-success fs-4 me-3">✓</div>
+                    <div>
+                        <p class="mb-0"><strong>Your data stays yours.</strong> NDPR-compliant. We never sell your information.</p>
+                    </div>
                 </div>
             </div>
         </div>
@@ -143,28 +234,34 @@
 </section>
 
 <!-- Waitlist Section -->
-<section id="waitlist" class="section section-primary">
+<section id="waitlist" class=" text-white" style="background-color: white;">
     <div class="container">
-        <div class="waitlist-box">
-            <h2 class="waitlist-title">Get Early Access</h2>
-            <p class="waitlist-subtitle">Join the waitlist and be the first to try Dally when we launch.</p>
-            
-            <form method="post" action="{% url 'main:waitlist_signup' %}" class="waitlist-form">
-                {% csrf_token %}
-                <div class="form-group">
-                    {{ form.email }}
-                    {% if form.email.errors %}
-                        <div class="form-error">{{ form.email.errors.0 }}</div>
-                    {% endif %}
+        <div class="row justify-content-center">
+            <div class="col-lg-6">
+                <h2 class="text-center fw-bold mb-3">Get Early Access</h2>
+                <p class="text-center mb-4">Join the waitlist and be the first to try Dally when we launch.</p>
+                
+                <div class="card border-0 shadow-lg">
+                    <div class="card-body p-3 p-md-4">
+                        <form method="post" action="{% url 'main:waitlist_signup' %}">
+                            {% csrf_token %}
+                            <div class="mb-3">
+                                {{ form.email }}
+                                {% if form.email.errors %}
+                                    <div class="text-danger small mt-1">{{ form.email.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="mb-3">
+                                {{ form.business_type }}
+                                {% if form.business_type.errors %}
+                                    <div class="text-danger small mt-1">{{ form.business_type.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                            <button type="submit" class="btn btn-primary-green w-100 py-3 fw-bold">Get Early Access</button>
+                        </form>
+                    </div>
                 </div>
-                <div class="form-group">
-                    {{ form.business_type }}
-                    {% if form.business_type.errors %}
-                        <div class="form-error">{{ form.business_type.errors.0 }}</div>
-                    {% endif %}
-                </div>
-                <button type="submit" class="btn btn-submit">Get Early Access</button>
-            </form>
+            </div>
         </div>
     </div>
 </section>

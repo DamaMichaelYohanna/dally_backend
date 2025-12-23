@@ -3,92 +3,140 @@
 {% block title %}Pricing - Dally{% endblock %}
 
 {% block content %}
-<section class="section">
-    <div class="container">
-        <h1 class="page-title">Simple, Transparent Pricing</h1>
-        <p class="page-subtitle">Start free. Upgrade when you need more.</p>
+<section class="py-5">
+    <div class="container py-4">
+        <h1 class="display-4 fw-bold text-center mb-3">Simple, Transparent Pricing</h1>
+        <p class="text-center text-muted mb-5">Start free. Upgrade when you need more.</p>
         
-        <div class="pricing-grid">
+        <div class="row g-4 mb-5">
             <!-- Free Plan -->
-            <div class="pricing-card">
-                <div class="pricing-header">
-                    <h3 class="pricing-title">Free</h3>
-                    <div class="pricing-price">
-                        <span class="price-amount">₦0</span>
-                        <span class="price-period">/month</span>
+            <div class="col-lg-6">
+                <div class="card h-100 border-2 shadow-sm">
+                    <div class="card-body p-4">
+                        <h3 class="h4 fw-bold mb-3">Free</h3>
+                        <div class="mb-4">
+                            <span class="display-4 fw-bold text-primary-green">₦0</span>
+                            <span class="text-muted">/month</span>
+                        </div>
+                        <ul class="list-unstyled mb-4">
+                            <li class="mb-2 d-flex align-items-start">
+                                <i class="bi bi-check-circle-fill text-success me-2"></i>
+                                <span>Daily income & expense entries</span>
+                            </li>
+                            <li class="mb-2 d-flex align-items-start">
+                                <i class="bi bi-check-circle-fill text-success me-2"></i>
+                                <span>Itemized transactions</span>
+                            </li>
+                            <li class="mb-2 d-flex align-items-start">
+                                <i class="bi bi-check-circle-fill text-success me-2"></i>
+                                <span>Daily cash summaries</span>
+                            </li>
+                            <li class="mb-2 d-flex align-items-start">
+                                <i class="bi bi-check-circle-fill text-success me-2"></i>
+                                <span>Date range reports</span>
+                            </li>
+                            <li class="mb-2 d-flex align-items-start">
+                                <i class="bi bi-check-circle-fill text-success me-2"></i>
+                                <span>Profit & loss statements</span>
+                            </li>
+                            <li class="mb-2 d-flex align-items-start">
+                                <i class="bi bi-check-circle-fill text-success me-2"></i>
+                                <span>Works offline</span>
+                            </li>
+                            <li class="mb-2 d-flex align-items-start">
+                                <i class="bi bi-check-circle-fill text-success me-2"></i>
+                                <span>Basic tax estimates</span>
+                            </li>
+                        </ul>
+                        <a href="#waitlist" class="btn btn-outline-success w-100">Join Waitlist</a>
                     </div>
                 </div>
-                <ul class="pricing-features">
-                    <li class="feature-item">✓ Daily income & expense entries</li>
-                    <li class="feature-item">✓ Itemized transactions</li>
-                    <li class="feature-item">✓ Daily cash summaries</li>
-                    <li class="feature-item">✓ Date range reports</li>
-                    <li class="feature-item">✓ Profit & loss statements</li>
-                    <li class="feature-item">✓ Works offline</li>
-                    <li class="feature-item">✓ Basic tax estimates</li>
-                </ul>
-                <a href="#waitlist" class="btn btn-outline">Join Waitlist</a>
             </div>
 
             <!-- Pro Plan (Coming Soon) -->
-            <div class="pricing-card pricing-card-featured">
-                <div class="pricing-badge">Coming Soon</div>
-                <div class="pricing-header">
-                    <h3 class="pricing-title">Pro</h3>
-                    <div class="pricing-price">
-                        <span class="price-amount">₦2,500</span>
-                        <span class="price-period">/month</span>
+            <div class="col-lg-6">
+                <div class="card h-100 border-success border-2 shadow-lg position-relative">
+                    <div class="position-absolute top-0 end-0 m-3">
+                        <span class="badge bg-accent-yellow text-dark px-3 py-2">Coming Soon</span>
+                    </div>
+                    <div class="card-body p-4">
+                        <h3 class="h4 fw-bold mb-3">Pro</h3>
+                        <div class="mb-4">
+                            <span class="display-4 fw-bold text-primary-green">₦2,500</span>
+                            <span class="text-muted">/month</span>
+                        </div>
+                        <ul class="list-unstyled mb-4">
+                            <li class="mb-2 d-flex align-items-start">
+                                <i class="bi bi-check-circle-fill text-success me-2"></i>
+                                <span>Everything in Free</span>
+                            </li>
+                            <li class="mb-2 d-flex align-items-start">
+                                <i class="bi bi-check-circle-fill text-success me-2"></i>
+                                <span>Official tax-ready reports</span>
+                            </li>
+                            <li class="mb-2 d-flex align-items-start">
+                                <i class="bi bi-check-circle-fill text-success me-2"></i>
+                                <span>Export to PDF/Excel</span>
+                            </li>
+                            <li class="mb-2 d-flex align-items-start">
+                                <i class="bi bi-check-circle-fill text-success me-2"></i>
+                                <span>Multi-year comparisons</span>
+                            </li>
+                            <li class="mb-2 d-flex align-items-start">
+                                <i class="bi bi-check-circle-fill text-success me-2"></i>
+                                <span>Priority support</span>
+                            </li>
+                            <li class="mb-2 d-flex align-items-start">
+                                <i class="bi bi-check-circle-fill text-success me-2"></i>
+                                <span>Early access to new features</span>
+                            </li>
+                        </ul>
+                        <button class="btn btn-primary-green w-100" disabled>Coming Soon</button>
                     </div>
                 </div>
-                <ul class="pricing-features">
-                    <li class="feature-item">✓ Everything in Free</li>
-                    <li class="feature-item">✓ Official tax-ready reports</li>
-                    <li class="feature-item">✓ Export to PDF/Excel</li>
-                    <li class="feature-item">✓ Multi-year comparisons</li>
-                    <li class="feature-item">✓ Priority support</li>
-                    <li class="feature-item">✓ Early access to new features</li>
-                </ul>
-                <button class="btn btn-primary" disabled>Coming Soon</button>
             </div>
         </div>
 
-        <div class="pricing-faq">
-            <h2 class="section-title">Frequently Asked Questions</h2>
-            <div class="faq-accordion">
-                <div class="faq-accordion-item">
-                    <button class="faq-accordion-button">
-                        <span class="faq-question">Do I need a credit card to start?</span>
-                        <span class="faq-icon">+</span>
-                    </button>
-                    <div class="faq-accordion-content">
-                        <p class="faq-answer">No. The free plan is completely free. No credit card required.</p>
+        <!-- FAQ Section -->
+        <div class="mt-5">
+            <h2 class="text-center fw-bold mb-5">Frequently Asked Questions</h2>
+            <div class="row justify-content-center">
+                <div class="col-lg-8">
+                    <div class="mb-3">
+                        <button class="faq-accordion-button">
+                            <span class="fw-semibold">Do I need a credit card to start?</span>
+                            <span class="faq-icon">+</span>
+                        </button>
+                        <div class="faq-content">
+                            <p class="text-muted p-3">No. The free plan is completely free. No credit card required.</p>
+                        </div>
                     </div>
-                </div>
-                <div class="faq-accordion-item">
-                    <button class="faq-accordion-button">
-                        <span class="faq-question">Can I try Pro before paying?</span>
-                        <span class="faq-icon">+</span>
-                    </button>
-                    <div class="faq-accordion-content">
-                        <p class="faq-answer">Yes! We'll offer a 14-day free trial when Pro launches.</p>
+                    <div class="mb-3">
+                        <button class="faq-accordion-button">
+                            <span class="fw-semibold">Can I try Pro before paying?</span>
+                            <span class="faq-icon">+</span>
+                        </button>
+                        <div class="faq-content">
+                            <p class="text-muted p-3">Yes! We'll offer a 14-day free trial when Pro launches.</p>
+                        </div>
                     </div>
-                </div>
-                <div class="faq-accordion-item">
-                    <button class="faq-accordion-button">
-                        <span class="faq-question">What payment methods do you accept?</span>
-                        <span class="faq-icon">+</span>
-                    </button>
-                    <div class="faq-accordion-content">
-                        <p class="faq-answer">We'll accept cards, bank transfers, and mobile money when Pro launches.</p>
+                    <div class="mb-3">
+                        <button class="faq-accordion-button">
+                            <span class="fw-semibold">What payment methods do you accept?</span>
+                            <span class="faq-icon">+</span>
+                        </button>
+                        <div class="faq-content">
+                            <p class="text-muted p-3">We'll accept cards, bank transfers, and mobile money when Pro launches.</p>
+                        </div>
                     </div>
-                </div>
-                <div class="faq-accordion-item">
-                    <button class="faq-accordion-button">
-                        <span class="faq-question">Can I cancel anytime?</span>
-                        <span class="faq-icon">+</span>
-                    </button>
-                    <div class="faq-accordion-content">
-                        <p class="faq-answer">Yes. Cancel your Pro subscription anytime. Your data stays accessible on the free plan.</p>
+                    <div class="mb-3">
+                        <button class="faq-accordion-button">
+                            <span class="fw-semibold">Can I cancel anytime?</span>
+                            <span class="faq-icon">+</span>
+                        </button>
+                        <div class="faq-content">
+                            <p class="text-muted p-3">Yes. Cancel your Pro subscription anytime. Your data stays accessible on the free plan.</p>
+                        </div>
                     </div>
                 </div>
             </div>

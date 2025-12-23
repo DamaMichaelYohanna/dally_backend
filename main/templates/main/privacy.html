@@ -3,71 +3,296 @@
 {% block title %}Privacy Policy - Dally{% endblock %}
 
 {% block content %}
-<section class="section">
-    <div class="container legal-container">
-        <h1 class="page-title">Privacy Policy</h1>
-        <p class="legal-updated">Last updated: December 23, 2025</p>
+<!-- Hero Section -->
+<section class="py-5 bg-primary-green text-white">
+    <div class="container py-4">
+        <div class="row justify-content-center">
+            <div class="col-lg-8 text-center">
+                <h1 class="display-4 fw-bold mb-3">Privacy Policy</h1>
+                <p class="lead mb-0">NDPR-Compliant • Last updated: December 23, 2025</p>
+            </div>
+        </div>
+    </div>
+</section>
 
-        <div class="legal-content">
-            <h2>Our Commitment to Your Privacy</h2>
-            <p>At Dally, we take your privacy seriously. This policy explains how we collect, use, and protect your information in compliance with the <strong>Nigeria Data Protection Regulation (NDPR)</strong>.</p>
+<!-- Content Section -->
+<section class="py-5">
+    <div class="container py-4">
+        <div class="row justify-content-center">
+            <div class="col-lg-9">
+                <!-- Trust Badge -->
+                <div class="alert alert-success border-success mb-5" role="alert">
+                    <h5 class="alert-heading d-flex align-items-center mb-3">
+                        <i class="bi bi-shield-check me-2"></i>
+                        Our Privacy Commitment
+                    </h5>
+                    <p class="mb-2">✓ We <strong>never sell</strong> your data</p>
+                    <p class="mb-2">✓ Fully <strong>NDPR-compliant</strong></p>
+                    <p class="mb-0">✓ Your data stays <strong>in Nigeria</strong></p>
+                </div>
 
-            <h2>What Information We Collect</h2>
-            <p>We collect information that you provide directly to us:</p>
-            <ul>
-                <li><strong>Account Information:</strong> Email address, business name, and optional business details when you register.</li>
-                <li><strong>Transaction Data:</strong> Sales, expenses, and other bookkeeping records you enter into the app.</li>
-                <li><strong>Usage Data:</strong> How you use the app (e.g., which features you access) to improve our service.</li>
-            </ul>
+                <!-- Privacy Content -->
+                <div class="card border-0 shadow-sm mb-4">
+                    <div class="card-body p-4">
+                        <h2 class="h4 fw-bold text-primary-green mb-3">
+                            <i class="bi bi-heart-fill me-2"></i>Our Commitment to Your Privacy
+                        </h2>
+                        <p class="text-muted mb-0">At Dally, we take your privacy seriously. This policy explains how we collect, use, and protect your information in compliance with the <strong>Nigeria Data Protection Regulation (NDPR)</strong>.</p>
+                    </div>
+                </div>
 
-            <h2>How We Use Your Information</h2>
-            <p>We use your information to:</p>
-            <ul>
-                <li>Provide and improve the Dally service</li>
-                <li>Calculate tax estimates based on your transaction data</li>
-                <li>Send you important updates about the app</li>
-                <li>Respond to your support requests</li>
-                <li>Comply with legal obligations (e.g., NDPR, FIRS requirements)</li>
-            </ul>
+                <div class="card border-0 shadow-sm mb-4">
+                    <div class="card-body p-4">
+                        <h2 class="h4 fw-bold text-primary-green mb-3">
+                            <i class="bi bi-database me-2"></i>What Information We Collect
+                        </h2>
+                        <p class="text-muted mb-3">We collect information that you provide directly to us:</p>
+                        <div class="row g-3">
+                            <div class="col-md-4">
+                                <div class="card bg-light border-0 h-100">
+                                    <div class="card-body text-center">
+                                        <i class="bi bi-person-circle fs-2 text-primary-green mb-2"></i>
+                                        <h6 class="fw-bold mb-2">Account Information</h6>
+                                        <small class="text-muted">Email address, business name, and optional business details</small>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="card bg-light border-0 h-100">
+                                    <div class="card-body text-center">
+                                        <i class="bi bi-receipt fs-2 text-primary-green mb-2"></i>
+                                        <h6 class="fw-bold mb-2">Transaction Data</h6>
+                                        <small class="text-muted">Sales, expenses, and bookkeeping records you enter</small>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="card bg-light border-0 h-100">
+                                    <div class="card-body text-center">
+                                        <i class="bi bi-activity fs-2 text-primary-green mb-2"></i>
+                                        <h6 class="fw-bold mb-2">Usage Data</h6>
+                                        <small class="text-muted">How you use the app to improve our service</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
 
-            <h2>How We Store Your Data</h2>
-            <p>Your data is stored securely on servers within Nigeria or in jurisdictions with adequate data protection laws. We use industry-standard encryption and security measures to protect your information.</p>
+                <div class="card border-0 shadow-sm mb-4">
+                    <div class="card-body p-4">
+                        <h2 class="h4 fw-bold text-primary-green mb-3">
+                            <i class="bi bi-gear-fill me-2"></i>How We Use Your Information
+                        </h2>
+                        <p class="text-muted mb-3">We use your information to:</p>
+                        <ul class="list-group list-group-flush">
+                            <li class="list-group-item d-flex align-items-start">
+                                <i class="bi bi-check-circle-fill text-success me-2 mt-1"></i>
+                                <span>Provide and improve the Dally service</span>
+                            </li>
+                            <li class="list-group-item d-flex align-items-start">
+                                <i class="bi bi-check-circle-fill text-success me-2 mt-1"></i>
+                                <span>Calculate tax estimates based on your transaction data</span>
+                            </li>
+                            <li class="list-group-item d-flex align-items-start">
+                                <i class="bi bi-check-circle-fill text-success me-2 mt-1"></i>
+                                <span>Send you important updates about the app</span>
+                            </li>
+                            <li class="list-group-item d-flex align-items-start">
+                                <i class="bi bi-check-circle-fill text-success me-2 mt-1"></i>
+                                <span>Respond to your support requests</span>
+                            </li>
+                            <li class="list-group-item d-flex align-items-start">
+                                <i class="bi bi-check-circle-fill text-success me-2 mt-1"></i>
+                                <span>Comply with legal obligations (e.g., NDPR, FIRS requirements)</span>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
 
-            <h2>We Do NOT Sell Your Data</h2>
-            <p>We will <strong>never</strong> sell, rent, or trade your personal information to third parties for marketing purposes.</p>
+                <div class="card border-0 shadow-sm mb-4">
+                    <div class="card-body p-4">
+                        <h2 class="h4 fw-bold text-primary-green mb-3">
+                            <i class="bi bi-server me-2"></i>How We Store Your Data
+                        </h2>
+                        <div class="d-flex align-items-start">
+                            <div class="bg-light rounded p-3 me-3">
+                                <i class="bi bi-flag-fill fs-2 text-success"></i>
+                            </div>
+                            <div>
+                                <p class="text-muted mb-2">Your data is stored securely on servers within Nigeria or in jurisdictions with adequate data protection laws.</p>
+                                <p class="text-muted mb-0">We use industry-standard encryption and security measures to protect your information.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
 
-            <h2>Third-Party Services</h2>
-            <p>We may use trusted third-party services for:</p>
-            <ul>
-                <li><strong>Cloud hosting:</strong> To store your data securely</li>
-                <li><strong>Email delivery:</strong> To send you account notifications</li>
-                <li><strong>Analytics:</strong> To understand how people use Dally (anonymized data only)</li>
-            </ul>
-            <p>These providers are required to protect your data and use it only as we direct.</p>
+                <div class="card border-0 shadow-sm mb-4 border-start border-success border-4">
+                    <div class="card-body p-4">
+                        <h2 class="h4 fw-bold text-success mb-3">
+                            <i class="bi bi-shield-fill-check me-2"></i>We Do NOT Sell Your Data
+                        </h2>
+                        <div class="alert alert-success mb-0">
+                            <strong>Never.</strong> We will <strong>never</strong> sell, rent, or trade your personal information to third parties for marketing purposes.
+                        </div>
+                    </div>
+                </div>
 
-            <h2>Your Rights Under NDPR</h2>
-            <p>As a Nigerian user, you have the right to:</p>
-            <ul>
-                <li><strong>Access:</strong> Request a copy of all data we hold about you</li>
-                <li><strong>Correction:</strong> Update or correct your information</li>
-                <li><strong>Deletion:</strong> Request that we delete your account and data</li>
-                <li><strong>Portability:</strong> Export your data in a common format</li>
-                <li><strong>Objection:</strong> Object to certain uses of your data</li>
-            </ul>
-            <p>To exercise these rights, contact us at the email provided below.</p>
+                <div class="card border-0 shadow-sm mb-4">
+                    <div class="card-body p-4">
+                        <h2 class="h4 fw-bold text-primary-green mb-3">
+                            <i class="bi bi-puzzle me-2"></i>Third-Party Services
+                        </h2>
+                        <p class="text-muted mb-3">We may use trusted third-party services for:</p>
+                        <div class="row g-3">
+                            <div class="col-md-4">
+                                <div class="d-flex align-items-start">
+                                    <i class="bi bi-cloud-fill text-primary-green me-2 mt-1"></i>
+                                    <div>
+                                        <strong class="d-block">Cloud Hosting</strong>
+                                        <small class="text-muted">To store your data securely</small>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="d-flex align-items-start">
+                                    <i class="bi bi-envelope-fill text-primary-green me-2 mt-1"></i>
+                                    <div>
+                                        <strong class="d-block">Email Delivery</strong>
+                                        <small class="text-muted">To send you notifications</small>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="d-flex align-items-start">
+                                    <i class="bi bi-graph-up text-primary-green me-2 mt-1"></i>
+                                    <div>
+                                        <strong class="d-block">Analytics</strong>
+                                        <small class="text-muted">Anonymized data only</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="alert alert-light border mt-3 mb-0">
+                            <small>These providers are required to protect your data and use it only as we direct.</small>
+                        </div>
+                    </div>
+                </div>
 
-            <h2>Data Retention</h2>
-            <p>We retain your data for as long as your account is active. If you delete your account, we will delete your data within 30 days, except where we're required by law to retain it longer.</p>
+                <div class="card border-0 shadow-sm mb-4 bg-light">
+                    <div class="card-body p-4">
+                        <h2 class="h4 fw-bold mb-3">
+                            <i class="bi bi-person-check-fill me-2"></i>Your Rights Under NDPR
+                        </h2>
+                        <p class="text-muted mb-3">As a Nigerian user, you have the right to:</p>
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <div class="card border-0 shadow-sm h-100">
+                                    <div class="card-body">
+                                        <h6 class="fw-bold text-primary-green mb-2">
+                                            <i class="bi bi-eye-fill me-2"></i>Access
+                                        </h6>
+                                        <small class="text-muted">Request a copy of all data we hold about you</small>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="card border-0 shadow-sm h-100">
+                                    <div class="card-body">
+                                        <h6 class="fw-bold text-primary-green mb-2">
+                                            <i class="bi bi-pencil-fill me-2"></i>Correction
+                                        </h6>
+                                        <small class="text-muted">Update or correct your information</small>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="card border-0 shadow-sm h-100">
+                                    <div class="card-body">
+                                        <h6 class="fw-bold text-primary-green mb-2">
+                                            <i class="bi bi-trash-fill me-2"></i>Deletion
+                                        </h6>
+                                        <small class="text-muted">Request that we delete your account and data</small>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="card border-0 shadow-sm h-100">
+                                    <div class="card-body">
+                                        <h6 class="fw-bold text-primary-green mb-2">
+                                            <i class="bi bi-download me-2"></i>Portability
+                                        </h6>
+                                        <small class="text-muted">Export your data in a common format</small>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="card border-0 shadow-sm h-100">
+                                    <div class="card-body">
+                                        <h6 class="fw-bold text-primary-green mb-2">
+                                            <i class="bi bi-hand-thumbs-down-fill me-2"></i>Objection
+                                        </h6>
+                                        <small class="text-muted">Object to certain uses of your data</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="alert alert-info border-info mt-3 mb-0">
+                            <small><strong>To exercise these rights,</strong> contact us at the email provided below.</small>
+                        </div>
+                    </div>
+                </div>
 
-            <h2>Children's Privacy</h2>
-            <p>Dally is not intended for use by anyone under the age of 18. We do not knowingly collect information from children.</p>
+                <div class="row g-4 mb-4">
+                    <div class="col-md-6">
+                        <div class="card border-0 shadow-sm h-100">
+                            <div class="card-body p-4">
+                                <h2 class="h5 fw-bold text-primary-green mb-3">
+                                    <i class="bi bi-hourglass-split me-2"></i>Data Retention
+                                </h2>
+                                <p class="text-muted small mb-0">We retain your data for as long as your account is active. If you delete your account, we will delete your data within 30 days, except where we're required by law to retain it longer.</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card border-0 shadow-sm h-100">
+                            <div class="card-body p-4">
+                                <h2 class="h5 fw-bold text-primary-green mb-3">
+                                    <i class="bi bi-person-x-fill me-2"></i>Children's Privacy
+                                </h2>
+                                <p class="text-muted small mb-0">Dally is not intended for use by anyone under the age of 18. We do not knowingly collect information from children.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
 
-            <h2>Changes to This Policy</h2>
-            <p>We may update this privacy policy from time to time. We'll notify you of significant changes by email or through the app.</p>
+                <div class="card border-0 shadow-sm mb-4">
+                    <div class="card-body p-4">
+                        <h2 class="h4 fw-bold text-primary-green mb-3">
+                            <i class="bi bi-arrow-repeat me-2"></i>Changes to This Policy
+                        </h2>
+                        <p class="text-muted mb-0">We may update this privacy policy from time to time. We'll notify you of significant changes by email or through the app.</p>
+                    </div>
+                </div>
 
-            <h2>Contact Us</h2>
-            <p>If you have questions about this privacy policy or how we handle your data, please contact us at:</p>
-            <p><strong>Email:</strong> privacy@dally.ng</p>
+                <div class="card border-0 shadow-sm mb-4">
+                    <div class="card-body p-4">
+                        <h2 class="h4 fw-bold text-primary-green mb-3">
+                            <i class="bi bi-envelope me-2"></i>Contact Us
+                        </h2>
+                        <p class="text-muted mb-3">If you have questions about this privacy policy or how we handle your data, please contact us at:</p>
+                        <a href="mailto:privacy@dally.ng" class="btn btn-outline-success">
+                            <i class="bi bi-envelope-fill me-2"></i>privacy@dally.ng
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Bottom CTA -->
+                <div class="text-center py-4">
+                    <p class="text-muted mb-3">Your privacy matters to us. Ready to get started?</p>
+                    <a href="{% url 'main:home' %}#waitlist" class="btn btn-primary-green btn-lg px-5">Join the Waitlist</a>
+                </div>
+            </div>
         </div>
     </div>
 </section>

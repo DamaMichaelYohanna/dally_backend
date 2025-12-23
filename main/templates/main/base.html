@@ -7,21 +7,208 @@
     <meta name="description" content="Dally - Simple daily records for Nigerian businesses. Track sales, expenses, and tax estimates — even offline.">
     <meta name="keywords" content="bookkeeping, Nigeria, small business, accounting, tax, FIRS">
     <title>{% block title %}Dally - Simple Bookkeeping for Nigerian Businesses{% endblock %}</title>
-    <link rel="stylesheet" href="{% static 'css/main.css' %}">
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/x-icon" href="{% static 'images/dally.ico' %}">
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <!-- google font link -->
+     <link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400..900&display=swap" rel="stylesheet">
+
+    <!-- Custom CSS -->
+    <style>
+        :root {
+            --primary-color: #2890a7;
+            --dark-primary: #1f7689;
+            --accent-yellow: #F5C518;
+            --neutral-dark: #1F2933;
+        }
+        
+        .bg-primary-green { background-color: var(--primary-color) !important; }
+        .text-primary-green { color: var(--primary-color) !important; }
+        .bg-dark-green { background-color: var(--dark-primary) !important; }
+        .bg-accent-yellow { background-color: var(--accent-yellow) !important; }
+        .text-neutral-dark { color: var(--neutral-dark) !important; }
+        .btn-primary-green { 
+            background-color: var(--primary-color); 
+            border-color: var(--primary-color);
+            color: white;
+        }
+        .btn-primary-green:hover { 
+            background-color: var(--dark-primary); 
+            border-color: var(--dark-primary);
+            color: white;
+        }
+        .btn-accent-yellow {
+            background-color: var(--accent-yellow);
+            border-color: var(--accent-yellow);
+            color: var(--neutral-dark);
+            font-weight: 600;
+        }
+        .btn-accent-yellow:hover {
+            background-color: #e0b510;
+            border-color: #e0b510;
+            color: var(--neutral-dark);
+        }
+        .navbar-brand { 
+            font-size: 1.5rem; 
+            font-weight: 700; 
+            color: var(--primary-color) !important; 
+        }
+        .nav-link {
+            transition: all 0.3s;
+            position: relative;
+        }
+        .nav-link.active {
+            color:#1D2C58 !important;
+            background-color: rgba(255, 255, 255, 0.1);
+            font-weight: 600;}
+        .hero-section {
+            background: linear-gradient(135deg, rgb(255, 255, 255) 0%, whitesmoke 100%);
+            color: white;
+            padding: 80px 0;
+        }
+        .footer {
+            background-color: var(--neutral-dark);
+            color: white;
+            padding: 60px 0 20px;
+            margin-top: 80px;
+        }
+        .footer h3, .footer h4 { color: var(--primary-color); }
+        .footer a { color: #D1D5DB; text-decoration: none; }
+        .footer a:hover { color: var(--primary-color); }
+        .testimonial-quote { font-size: 3rem; color: var(--primary-color); opacity: 0.3; line-height: 1; }
+        .testimonial-avatar { 
+            width: 50px; 
+            height: 50px; 
+            background: linear-gradient(135deg, var(--primary-color), var(--dark-primary)); 
+            color: white; 
+            border-radius: 50%; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            font-size: 1.25rem; 
+            font-weight: 700; 
+        }
+        .step-number {
+            width: 60px;
+            height: 60px;
+            background-color: white;
+            color: #2890a7;
+            font-size: 2rem;
+            font-weight: 700;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 1rem;
+            border: 1px solid #2890a7;
+        }
+        .faq-accordion-button {
+            background: white;
+            border: 2px solid #e5e7eb;
+            border-radius: 0.5rem;
+            padding: 1rem 1.5rem;
+            width: 100%;
+            text-align: left;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .faq-accordion-button:hover { border-color: var(--primary-color); }
+        .faq-accordion-button.active { border-color: var(--primary-color); }
+        .faq-icon {
+            color: var(--primary-color);
+            font-size: 1.5rem;
+            transition: transform 0.3s;
+        }
+        .faq-accordion-button.active .faq-icon { transform: rotate(45deg); }
+        .faq-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease;
+        }
+        .faq-content.show { max-height: 500px; padding: 1rem 0; }
+        
+        /* Phone image responsive sizing */
+        .w-md-60 {
+            width: 100% !important;
+        }
+        @media (min-width: 768px) {
+            .w-md-60 {
+                width: 75% !important;
+            }
+        }
+        
+        /* Button responsive sizing */
+        .w-md-auto {
+            width: 100% !important;
+        }
+        @media (min-width: 768px) {
+            .w-md-auto {
+                width: auto !important;
+            }
+        }
+        
+        /* Feature card animations */
+        .feature-card {
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 8px rgba(40, 144, 167, 0.1);
+        }
+        .feature-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 20px rgba(40, 144, 167, 0.25);
+        }
+        .feature-icon {
+            width: 50px;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: rgba(40, 144, 167, 0.1);
+            color: var(--primary-color);
+            border-radius: 8px;
+            font-size: 1.5rem;
+        }
+    </style>
     {% block extra_css %}{% endblock %}
 </head>
 <body>
     <!-- Navigation -->
-    <nav class="nav">
+    <nav class="navbar navbar-expand-lg navbar-light bg-white border-bottom sticky-top">
         <div class="container">
-            <div class="nav-content">
-                <a href="{% url 'main:home' %}" class="logo">
-                    <span class="logo-text">Dally</span>
-                </a>
-                <div class="nav-links">
-                    <a href="{% url 'main:home' %}" class="nav-link {% if request.resolver_match.url_name == 'home' %}active{% endif %}">Home</a>
-                    <a href="{% url 'main:pricing' %}" class="nav-link {% if request.resolver_match.url_name == 'pricing' %}active{% endif %}">Pricing</a>
-                    <a href="#waitlist" class="btn btn-primary">Join Waitlist</a>
+            <a class="navbar-brand d-flex align-items-center" href="{% url 'main:home' %}">
+                <img src="{% static 'images/dally.png' %}" alt="Dally Logo" height="32" class="me-2">
+                <span>Dally</span>
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav mx-auto">
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.resolver_match.url_name == 'home' %}active{% endif %}" href="{% url 'main:home' %}">Home</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.resolver_match.url_name == 'pricing' %}active{% endif %}" href="{% url 'main:pricing' %}">Pricing</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.resolver_match.url_name == 'terms' %}active{% endif %}" href="{% url 'main:terms' %}">Terms</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.resolver_match.url_name == 'privacy' %}active{% endif %}" href="{% url 'main:privacy' %}">Privacy</a>
+                    </li>
+                </ul>
+                <div class="d-flex">
+                    <a href="#waitlist" class="btn btn-primary-green">Join Waitlist</a>
                 </div>
             </div>
         </div>
@@ -29,14 +216,13 @@
 
     <!-- Messages -->
     {% if messages %}
-    <div class="messages-container">
-        <div class="container">
-            {% for message in messages %}
-            <div class="message message-{{ message.tags }}">
-                {{ message }}
-            </div>
-            {% endfor %}
+    <div class="container mt-3">
+        {% for message in messages %}
+        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
         </div>
+        {% endfor %}
     </div>
     {% endif %}
 
@@ -48,37 +234,65 @@
     <!-- Footer -->
     <footer class="footer">
         <div class="container">
-            <div class="footer-content">
-                <div class="footer-section">
-                    <h3 class="footer-logo">Dally</h3>
-                    <p class="footer-text">Simple daily records for Nigerian businesses.</p>
+            <div class="row">
+                <div class="col-md-3 mb-4">
+                    <h3 class="mb-3">Dally</h3>
+                    <p class="text-light">Simple daily records for Nigerian businesses.</p>
                 </div>
-                <div class="footer-section">
-                    <h4 class="footer-heading">Company</h4>
-                    <ul class="footer-links">
-                        <li><a href="{% url 'main:home' %}">Home</a></li>
-                        <li><a href="{% url 'main:pricing' %}">Pricing</a></li>
+                <div class="col-md-3 mb-4">
+                    <h4 class="mb-3">Company</h4>
+                    <ul class="list-unstyled">
+                        <li class="mb-2"><a href="{% url 'main:home' %}">Home</a></li>
+                        <li class="mb-2"><a href="{% url 'main:pricing' %}">Pricing</a></li>
                     </ul>
                 </div>
-                <div class="footer-section">
-                    <h4 class="footer-heading">Legal</h4>
-                    <ul class="footer-links">
-                        <li><a href="{% url 'main:privacy' %}">Privacy Policy</a></li>
-                        <li><a href="{% url 'main:terms' %}">Terms of Service</a></li>
+                <div class="col-md-3 mb-4">
+                    <h4 class="mb-3">Legal</h4>
+                    <ul class="list-unstyled">
+                        <li class="mb-2"><a href="{% url 'main:privacy' %}">Privacy Policy</a></li>
+                        <li class="mb-2"><a href="{% url 'main:terms' %}">Terms of Service</a></li>
                     </ul>
                 </div>
-                <div class="footer-section">
-                    <h4 class="footer-heading">Contact</h4>
-                    <p class="footer-text">Built for Nigeria 🇳🇬</p>
+                <div class="col-md-3 mb-4">
+                    <h4 class="mb-3">Contact</h4>
+                    <p class="text-light">Built for Nigeria 🇳🇬</p>
                 </div>
             </div>
-            <div class="footer-bottom">
-                <p>&copy; 2025 Dally. All rights reserved.</p>
+            <hr class="border-secondary">
+            <div class="text-center pt-3">
+                <p class="text-muted mb-0">&copy; 2025 Dally. All rights reserved.</p>
             </div>
         </div>
     </footer>
 
-    <script src="{% static 'js/main.js' %}"></script>
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Custom JS -->
+    <script>
+        // FAQ Accordion
+        document.addEventListener('DOMContentLoaded', function() {
+            const accordionButtons = document.querySelectorAll('.faq-accordion-button');
+            
+            accordionButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    const isActive = this.classList.contains('active');
+                    
+                    // Close all
+                    document.querySelectorAll('.faq-accordion-button').forEach(btn => {
+                        btn.classList.remove('active');
+                        btn.nextElementSibling.classList.remove('show');
+                    });
+                    
+                    // Open clicked if was closed
+                    if (!isActive) {
+                        this.classList.add('active');
+                        this.nextElementSibling.classList.add('show');
+                    }
+                });
+            });
+        });
+    </script>
     {% block extra_js %}{% endblock %}
 </body>
 </html>
