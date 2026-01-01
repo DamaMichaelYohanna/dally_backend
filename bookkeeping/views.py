@@ -1,4 +1,7 @@
+import os
 from rest_framework import viewsets, status
+from django.http import HttpResponse
+from django.conf import settings
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
@@ -7,6 +10,20 @@ from decimal import Decimal
 from datetime import datetime, date
 from drf_spectacular.utils import extend_schema, extend_schema_view, OpenApiParameter, OpenApiExample
 from drf_spectacular.types import OpenApiTypes
+
+from reportlab.platypus import (
+            SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
+        )
+from reportlab.lib.styles import getSampleStyleSheet
+from reportlab.lib.pagesizes import A4
+from reportlab.lib import colors
+from reportlab.pdfbase import pdfmetrics
+from reportlab.pdfbase.ttfonts import TTFont
+from django.http import FileResponse
+from io import BytesIO
+from datetime import datetime
+
+
 from .models import Business, Transaction, TransactionItem
 from .serializers import (
     BusinessSerializer, 
@@ -309,6 +326,128 @@ class TransactionViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(transaction)
         return Response(serializer.data)
 
+    @action(detail=False, methods=['get'], url_path='export/pdf')
+    def export_pdf(self, request):
+        """
+        Export filtered transactions as a detailed PDF report for the logged-in business owner.
+        Filters: type, start_date, end_date, date (YYYY-MM-DD)
+        """
+        FONT_PATH = os.path.join(
+            settings.BASE_DIR,
+            'staticfiles',
+            "fonts",
+            "DejaVuSans.ttf"
+        )
+        # Register Unicode font
+        pdfmetrics.registerFont(TTFont('DejaVu', FONT_PATH))
+        queryset = self.get_queryset()
+
+        buffer = BytesIO()
+        doc = SimpleDocTemplate(
+            buffer,
+            pagesize=A4,
+            rightMargin=40,
+            leftMargin=40,
+            topMargin=40,
+            bottomMargin=40
+        )
+
+        styles = getSampleStyleSheet()
+        styles["Normal"].fontName = "DejaVu"
+        styles["Heading1"].fontName = "DejaVu"
+        styles["Heading2"].fontName = "DejaVu"
+
+        elements = []
+
+        # Title
+        elements.append(Paragraph("<b>Dally Bookkeeping Report</b>", styles["Heading1"]))
+        elements.append(Spacer(1, 10))
+
+        elements.append(Paragraph(
+            f"User: {request.user.email}<br/>"
+            f"Exported: {datetime.now().strftime('%Y-%m-%d %H:%M')}",
+            styles["Normal"]
+        ))
+        elements.append(Spacer(1, 20))
+
+        # ================= SUMMARY TABLE =================
+        income = queryset.filter(transaction_type='income').aggregate(
+            total=Sum('total_amount')
+        )['total'] or 0
+
+        expense = queryset.filter(transaction_type='expense').aggregate(
+            total=Sum('total_amount')
+        )['total'] or 0
+
+        net = income - expense
+
+        summary_data = [
+            ["Metric", "Amount (₦)"],
+            ["Total Income", f"{income:,.2f}"],
+            ["Total Expense", f"{expense:,.2f}"],
+            ["Net", f"{net:,.2f}"],
+        ]
+
+        summary_table = Table(summary_data, colWidths=[200, 200])
+        summary_table.setStyle(TableStyle([
+            ("BACKGROUND", (0, 0), (-1, 0), colors.lightgrey),
+            ("GRID", (0, 0), (-1, -1), 1, colors.grey),
+            ("FONTNAME", (0, 0), (-1, -1), "DejaVu"),
+            ("ALIGN", (1, 1), (-1, -1), "RIGHT"),
+        ]))
+
+        elements.append(Paragraph("<b>Summary</b>", styles["Heading2"]))
+        elements.append(summary_table)
+        elements.append(Spacer(1, 20))
+
+        # ================= TRANSACTIONS =================
+        elements.append(Paragraph("<b>Detailed Transactions</b>", styles["Heading2"]))
+        elements.append(Spacer(1, 10))
+
+        tx_table_data = [
+            ["Date", "Type", "Description", "Amount (₦)"]
+        ]
+
+        for tx in queryset.order_by("-date"):
+            tx_table_data.append([
+                tx.date.strftime("%Y-%m-%d"),
+                tx.get_transaction_type_display(),
+                tx.description,
+                f"{tx.total_amount:,.2f}"
+            ])
+
+            # Items (indented rows)
+            for item in tx.items.all():
+                tx_table_data.append([
+                    "",
+                    "↳ Item",
+                    f"{item.description} ({item.category or '-'})",
+                    f"{item.amount:,.2f}"
+                ])
+
+        tx_table = Table(tx_table_data, colWidths=[70, 70, 230, 90])
+        tx_table.setStyle(TableStyle([
+            ("BACKGROUND", (0, 0), (-1, 0), colors.lightgrey),
+            ("GRID", (0, 0), (-1, -1), 0.5, colors.grey),
+            ("FONTNAME", (0, 0), (-1, -1), "DejaVu"),
+            ("ALIGN", (3, 1), (-1, -1), "RIGHT"),
+            ("VALIGN", (0, 0), (-1, -1), "TOP"),
+        ]))
+
+        elements.append(tx_table)
+
+        # Build PDF
+        doc.build(elements)
+        buffer.seek(0)
+
+        return FileResponse(
+            buffer,
+            as_attachment=True,
+            filename="dally_report.pdf",
+            content_type="application/pdf"
+        )
+
+
 
 @extend_schema_view(
     list=extend_schema(
@@ -340,13 +479,7 @@ class TransactionItemViewSet(viewsets.ReadOnlyModelViewSet):
         ).select_related('transaction')
 
 
-@extend_schema_view(
-    list=extend_schema(
-        summary="Summary endpoints",
-        description="Access various summary and analytics endpoints for bookkeeping data.",
-        tags=["Summaries"]
-    )
-)
+
 class SummaryViewSet(viewsets.ViewSet):
     """
     ViewSet for summary and analytics endpoints.
