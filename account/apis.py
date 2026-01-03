@@ -1,119 +1,29 @@
-from django.contrib.auth.models import User
+import logging
+from datetime import timedelta
 from django.contrib.auth.tokens import default_token_generator
 from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
+from django.utils.timezone import now
 from django.utils.encoding import force_bytes, force_str
 from django.core.mail import send_mail
 from django.conf import settings
 from django.db import transaction
-from rest_framework import serializers, status
+
+import jwt
+from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from drf_spectacular.utils import extend_schema, OpenApiExample
 
+from account.utils import create_or_replace_otp
 
-class UserRegistrationSerializer(serializers.Serializer):
-    """
-    Serializer for user registration with business creation
-    Email will be used as the username
-    """
-    email = serializers.EmailField()
-    password = serializers.CharField(write_only=True, min_length=8)
-    password_confirm = serializers.CharField(write_only=True)
-    first_name = serializers.CharField(max_length=150, required=False, allow_blank=True)
-    last_name = serializers.CharField(max_length=150, required=False, allow_blank=True)
-    
-    # Business fields
-    business_name = serializers.CharField(max_length=255)
-    business_description = serializers.CharField(required=False, allow_blank=True)
+from .serializers import PasswordOTPVerifySerializer, UserRegistrationSerializer, PasswordResetRequestSerializer, ChangePasswordSerializer
+from bookkeeping.models import Business
+from account.models import PasswordResetOTP, User
 
-    def validate_email(self, value):
-        """Validate that email is unique (will be used as username)"""
-        if User.objects.filter(email=value).exists():
-            raise serializers.ValidationError("Email already registered.")
-        if User.objects.filter(username=value).exists():
-            raise serializers.ValidationError("Email already registered.")
-        return value
-
-    def validate(self, data):
-        """Validate that passwords match"""
-        if data['password'] != data['password_confirm']:
-            raise serializers.ValidationError({"password": "Passwords do not match."})
-        return data
-
-
-class PasswordResetRequestSerializer(serializers.Serializer):
-    """
-    Serializer for requesting a password reset
-    """
-    email = serializers.EmailField()
-
-    def validate_email(self, value):
-        """
-        Validate that the email exists in the system
-        """
-        if not User.objects.filter(email=value).exists():
-            # Don't reveal that the email doesn't exist for security
-            # Just silently accept it
-            pass
-        return value
-
-
-class PasswordResetConfirmSerializer(serializers.Serializer):
-    """
-    Serializer for confirming a password reset
-    """
-    uid = serializers.CharField()
-    token = serializers.CharField()
-    new_password = serializers.CharField(write_only=True, min_length=8)
-    new_password_confirm = serializers.CharField(write_only=True)
-
-    def validate(self, data):
-        """
-        Validate that passwords match and token is valid
-        """
-        if data['new_password'] != data['new_password_confirm']:
-            raise serializers.ValidationError("Passwords do not match.")
-        
-        # Validate token
-        try:
-            uid = force_str(urlsafe_base64_decode(data['uid']))
-            user = User.objects.get(pk=uid)
-        except (TypeError, ValueError, OverflowError, User.DoesNotExist):
-            raise serializers.ValidationError("Invalid reset link.")
-        
-        if not default_token_generator.check_token(user, data['token']):
-            raise serializers.ValidationError("Invalid or expired reset link.")
-        
-        data['user'] = user
-        return data
-
-
-class ChangePasswordSerializer(serializers.Serializer):
-    """
-    Serializer for changing password while authenticated
-    """
-    old_password = serializers.CharField(write_only=True)
-    new_password = serializers.CharField(write_only=True, min_length=8)
-    new_password_confirm = serializers.CharField(write_only=True)
-
-    def validate(self, data):
-        """
-        Validate that passwords match
-        """
-        if data['new_password'] != data['new_password_confirm']:
-            raise serializers.ValidationError("New passwords do not match.")
-        return data
-
-    def validate_old_password(self, value):
-        """
-        Validate that the old password is correct
-        """
-        user = self.context['request'].user
-        if not user.check_password(value):
-            raise serializers.ValidationError("Old password is incorrect.")
-        return value
-
+# prepare logging handler for this file
+logger = logging.getLogger(__name__)
 
 @extend_schema(
     summary="Register new user",
@@ -202,9 +112,6 @@ def register(request):
                     last_name=serializer.validated_data.get('last_name', '')
                 )
                 
-                # Import Business model
-                from bookkeeping.models import Business
-                
                 # Create business for the user
                 business = Business.objects.create(
                     user=user,
@@ -213,7 +120,6 @@ def register(request):
                 )
                 
                 # Generate JWT tokens
-                from rest_framework_simplejwt.tokens import RefreshToken
                 refresh = RefreshToken.for_user(user)
                 
                 # Send welcome email (optional)
@@ -221,27 +127,26 @@ def register(request):
                     send_mail(
                         subject='Welcome to Dally Bookkeeping!',
                         message=f'''Hello {user.first_name or 'there'},
-
-Welcome to Dally Bookkeeping! Your account has been successfully created.
-
-Business: {business.name}
-Email: {user.email}
-
-You can now log in using your email address and start managing your bookkeeping records.
-
-Best regards,
-Dally Bookkeeping Team
-''',
+                        Welcome to Dally Bookkeeping! Your account has been successfully created.
+                        Business: {business.name}
+                        Email: {user.email}
+                        
+                        You can now log in using your email address and start managing your bookkeeping records.
+                        
+                        Best regards,
+                        Dally Bookkeeping Team
+                                ''',
                         from_email=settings.DEFAULT_FROM_EMAIL,
                         recipient_list=[user.email],
                         fail_silently=True,
                     )
+                    logger.info(f"Email send to {user.email} successfully!")
                 except Exception as e:
-                    # Don't fail registration if email fails
-                    print(f"Failed to send welcome email: {e}")
+                    logger.warning(f"Sending email failed for {user.email}")
                 
+                logger.info(f"Account for {user.email} has been created successfully")
                 return Response({
-                    'message': 'User registered successfully.',
+                    'status': 'success',
                     'user': {
                         'id': user.id,
                         'username': user.username,
@@ -261,8 +166,9 @@ Dally Bookkeeping Team
                 }, status=status.HTTP_201_CREATED)
                 
         except Exception as e:
+            logger.error(f"Failed to create user account. error {e}")
             return Response({
-                'error': 'Registration failed. Please try again.',
+                'status': 'error',
                 'detail': str(e)
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
     
@@ -271,7 +177,7 @@ Dally Bookkeeping Team
 
 @extend_schema(
     summary="Request password reset",
-    description="Request a password reset link. In development mode, returns the reset URL. In production, sends an email.",
+    description="Request a password reset pin. In development mode, returns the reset URL. In production, sends an email.",
     tags=["Authentication"],
     request=PasswordResetRequestSerializer,
     examples=[
@@ -285,10 +191,8 @@ Dally Bookkeeping Team
         200: {
             'type': 'object',
             'properties': {
-                'message': {'type': 'string'},
-                'reset_url': {'type': 'string', 'description': 'Only in DEBUG mode'},
-                'uid': {'type': 'string', 'description': 'Only in DEBUG mode'},
-                'token': {'type': 'string', 'description': 'Only in DEBUG mode'}
+                'status': {'type': 'string'},
+                'otp': {'type': 'string', 'description': 'Resent pin'},
             }
         }
     }
@@ -297,7 +201,7 @@ Dally Bookkeeping Team
 @permission_classes([AllowAny])
 def password_reset_request(request):
     """
-    Request a password reset email
+    Request a password reset email. OTP will be sent
     
     POST /api/auth/password-reset/
     {
@@ -312,55 +216,47 @@ def password_reset_request(request):
         # Get user by email
         try:
             user = User.objects.get(email=email)
-            
-            # Generate password reset token
-            token = default_token_generator.make_token(user)
-            uid = urlsafe_base64_encode(force_bytes(user.pk))
-            
-            # Build reset URL (frontend URL in production)
-            reset_url = f"{request.scheme}://{request.get_host()}/api/auth/password-reset-verify/{uid}/{token}/"
-            
+            otp = create_or_replace_otp(user)
             # Send password reset email
             try:
                 send_mail(
                     subject='Password Reset Request - Dally Bookkeeping',
                     message=f'''Hello {user.username},
+                    
+                    You have requested to reset your password for your Dally Bookkeeping account.
 
-You have requested to reset your password for your Dally Bookkeeping account.
+                    Here is your six (6) digit pin
 
-Click the link below to reset your password:
-{reset_url}
+                    {otp}
 
-This link will expire in 24 hours.
+                    This pin will expire in 10 mins.
 
-If you did not request this password reset, please ignore this email.
+                    If you did not request this password reset, please ignore this email.
 
-Best regards,
-Dally Bookkeeping Team
-''',
+                    Best regards,
+                    Dally Bookkeeping Team
+                    ''',
                     from_email=settings.DEFAULT_FROM_EMAIL,
                     recipient_list=[email],
                     fail_silently=False,
                 )
                 email_sent = True
+                logger.info(f"Reset password pin sent to {email}")
             except Exception as e:
-                # Log the error but don't reveal it to the user
-                print(f"Failed to send email: {e}")
+                logger.error(f"Could not send email: {e}")
                 email_sent = False
             
             # For development/testing, also return the reset link
             if settings.DEBUG:
                 return Response({
-                    'message': 'Password reset link generated.',
-                    'reset_url': reset_url,
-                    'uid': uid,
-                    'token': token,
+                    'status': 'Success!',
+                    'otp': otp,
                     'email_sent': email_sent,
-                    'note': 'Check your email for the reset link.' if email_sent else 'Email sending failed. Use the reset_url above.'
                 }, status=status.HTTP_200_OK)
             else:
                 return Response({
-                    'message': 'If an account exists with this email, a password reset link has been sent.'
+                    "status": "success",
+                    'message': 'If an account exists with this email, a password reset pin has been sent.'
                 }, status=status.HTTP_200_OK)
                 
         except User.DoesNotExist:
@@ -369,31 +265,88 @@ Dally Bookkeeping Team
         
         # Always return success to prevent email enumeration
         return Response({
-            'message': 'If an account exists with this email, a password reset link has been sent.'
+            "status": "success",
+            'message': 'If an account exists with this email, a password reset pin has been sent.'
         }, status=status.HTTP_200_OK)
     
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
+
+# verify otp
+# ---------------------------------
 @extend_schema(
-    summary="Confirm password reset",
-    description="Reset password using the token received via email.",
+    summary="Confirm password reset pin",
+    description="Confirm password reset pin sent via email.",
     tags=["Authentication"],
-    request=PasswordResetConfirmSerializer,
+    request=PasswordOTPVerifySerializer,
     examples=[
         OpenApiExample(
-            'Password Reset Confirm',
+            'Confirm OTP',
             value={
-                'uid': 'MQ',
-                'token': 'abc123-token',
-                'new_password': 'newSecurePassword123',
-                'new_password_confirm': 'newSecurePassword123'
+                'otp': '1234',
+                'email': "codewithdama@gmail.com"
             },
             request_only=True
         )
     ],
     responses={
-        200: {'description': 'Password reset successful'},
+        200: {'description': 'Pin verified successful proceed to reset password'},
+        400: {'description': 'Invalid reset pin'}
+    }
+)
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def password_otp_verify(request):
+    """
+    Confirm password reset pin
+    
+    POST /api/auth/confirm-otp/
+    {
+        "otp": "1234",
+    }
+    """
+    serializer = PasswordOTPVerifySerializer(data=request.data)
+    
+    if serializer.is_valid():
+        user = serializer.validated_data['user']
+        reset_token = jwt.encode(
+        {
+            "email": user.email,
+            "purpose": "password_reset",
+            "exp": now() + timedelta(minutes=10)
+        },
+        settings.INTERNAL_JWT_SECRET,
+        algorithm="HS256"
+    )
+        return Response({
+            'message': 'success',
+            'reset_token': reset_token
+        }, status=status.HTTP_200_OK)
+    
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+
+
+@extend_schema(
+    summary="Reset password using pin",
+    description="Reset password using using jwt token obtained after verifying pin.",
+    tags=["Authentication"],
+    request=PasswordOTPVerifySerializer,
+    examples=[
+        OpenApiExample(
+            'Password Reset Confirm',
+            value={
+                'reset_token': 'your_jwt_token_here',
+                'new_password': "newpassword123",
+                'new_password_confirm': "newpassword123"
+            },
+            request_only=True
+        )
+    ],
+    responses={
+        200: {'description': 'Pin verified successful proceed to reset password'},
         400: {'description': 'Invalid token or passwords do not match'}
     }
 )
@@ -401,26 +354,19 @@ Dally Bookkeeping Team
 @permission_classes([AllowAny])
 def password_reset_confirm(request):
     """
-    Confirm password reset with token
+    Verify reset paasword pin
     
     POST /api/auth/password-reset-confirm/
     {
-        "uid": "MQ",
-        "token": "abcdef-123456",
+        "jwt": "your_jwt_token_here",
         "new_password": "newpassword123",
         "new_password_confirm": "newpassword123"
     }
     """
-    serializer = PasswordResetConfirmSerializer(data=request.data)
+    serializer = ChangePasswordSerializer(data=request.data)
     
     if serializer.is_valid():
-        user = serializer.validated_data['user']
-        new_password = serializer.validated_data['new_password']
-        
-        # Set new password
-        user.set_password(new_password)
-        user.save()
-        
+        serializer.save()
         return Response({
             'message': 'Password has been reset successfully.'
         }, status=status.HTTP_200_OK)

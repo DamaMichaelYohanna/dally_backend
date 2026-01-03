@@ -1,9 +1,9 @@
 import uuid
 from django.db import models
-from django.contrib.auth.models import User
 from django.core.validators import MinValueValidator
 from decimal import Decimal
 
+from account.models import User
 
 class Business(models.Model):
     """

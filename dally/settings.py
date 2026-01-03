@@ -9,7 +9,7 @@ https://docs.djangoproject.com/en/5.2/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.2/ref/settings/
 """
-
+import os
 from pathlib import Path
 from datetime import timedelta
 from decouple import config, Csv
@@ -82,12 +82,20 @@ WSGI_APPLICATION = 'dally.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
-DATABASES = {
+if DEBUG:
+    DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
+    }
+}
+    
+else:
+    DATABASES = {
     'default': dj_database_url.parse(
         config('DATABASE_URL', default='postgresql://postgres:ifUFgUZCZzOaylVPYQBlQCGthpTVwVZT@ballast.proxy.rlwy.net:35267/railway')
     )
 }
-
 
 # Password validation
 # https://docs.djangoproject.com/en/5.2/ref/settings/#auth-password-validators
@@ -188,3 +196,8 @@ EMAIL_USE_TLS = True
 EMAIL_HOST_USER = config('EMAIL_HOST_USER', default='')
 EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD', default='')
 DEFAULT_FROM_EMAIL = config('DEFAULT_FROM_EMAIL', default=EMAIL_HOST_USER)
+
+
+AUTH_USER_MODEL = 'account.User'
+
+INTERNAL_JWT_SECRET = config('INTERNAL_JWT_SECRET', default='change_this_in_production')
