@@ -10,7 +10,7 @@ class Business(models.Model):
     Business model - one user has one business
     """
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='business')
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='business')
     name = models.CharField(max_length=255)
     description = models.TextField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)

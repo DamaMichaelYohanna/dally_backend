@@ -1,7 +1,5 @@
 import uuid
-from datetime import timedelta
 from django.utils import timezone
-from django.contrib.auth.hashers import check_password
 from django.db import models
 from django.contrib.auth.models import AbstractUser
 
@@ -46,23 +44,28 @@ class User(AbstractUser):
 
 class PasswordResetOTP(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
-    otp_hash = models.CharField(max_length=255)
+    otp = models.CharField(max_length=255)
     attempts = models.PositiveIntegerField(default=0)
+    reset_jti = models.CharField(max_length=500, blank=True, null=True)
     expires_at = models.DateTimeField()
     used = models.BooleanField(default=False)
+    jti_used = models.BooleanField(default=False)
 
     MAX_ATTEMPTS = 5
-    
-    # def _verify_hash(self, otp):
-    #     return check_password(str(otp), self.otp_hash)
 
-    def is_valid(self):
+    def otp_valid(self):
         return (
-            not self.used
-            and self.attempts < self.MAX_ATTEMPTS
+            not self.used and
+            not self.attempts > self.MAX_ATTEMPTS
             and timezone.now() < self.expires_at
-            # and self._verify_hash(self.otp_hash)
+        )
+    
+    def jwt_valid(self):
+        return (
+            not self.jti_used and
+            not self.attempts > self.MAX_ATTEMPTS
+            and timezone.now() < self.expires_at
         )
     
     def __str__(self):
-        return f" - OTP for {self.user.email}"
+        return f" - OTP for {self.user.id}"

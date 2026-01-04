@@ -4,22 +4,10 @@ from .models import Business, Transaction, TransactionItem
 from decimal import Decimal
 
 
-class UserSerializer(serializers.ModelSerializer):
-    """
-    Serializer for User model
-    """
-    class Meta:
-        model = User
-        fields = ['id', 'username', 'email', 'first_name', 'last_name']
-        read_only_fields = ['id']
-
-
 class BusinessSerializer(serializers.ModelSerializer):
     """
     Serializer for Business model
-    """
-    user = serializers.PrimaryKeyRelatedField(read_only=True)
-    
+    """    
     class Meta:
         model = Business
         fields = ['id', 'user', 'name', 'description', 'created_at', 'updated_at']
@@ -31,28 +19,149 @@ class BusinessSerializer(serializers.ModelSerializer):
         return super().create(validated_data)
 
 
+# ======================================================
+# my updated serializers below
 class TransactionItemSerializer(serializers.ModelSerializer):
-    """
-    Serializer for TransactionItem model.
-    All amounts are in Naira (NGN).
-    """
-    amount = serializers.DecimalField(
-        max_digits=12, decimal_places=2,
-        help_text="Amount in Naira (NGN)"
-    )
-    
     class Meta:
         model = TransactionItem
-        fields = ['id', 'description', 'amount', 'category', 'created_at', 'updated_at']
-        read_only_fields = ['id', 'created_at', 'updated_at']
+        fields = ['id', 'description', 'amount', 'category']
+        read_only_fields = ['id']
 
-    def validate_amount(self, value):
-        """
-        Validate that amount is positive
-        """
-        if value <= 0:
-            raise serializers.ValidationError("Amount must be greater than zero.")
+
+# ======================================================
+# Transaction create serializer
+class TransactionCreateSerializer(serializers.ModelSerializer):
+    items = TransactionItemSerializer(many=True)
+    business_id = serializers.UUIDField(write_only=True, required=False)
+
+    class Meta:
+        model = Transaction
+        fields = [
+            'transaction_type',
+            'date',
+            'description',
+            'business_id',
+            'items',
+        ]
+
+    def validate_items(self, value):
+        if not value:
+            raise serializers.ValidationError(
+                "At least one transaction item is required."
+            )
         return value
+
+    def validate_transaction_type(self, value):
+        if value not in ['income', 'expense']:
+            raise serializers.ValidationError(
+                "Transaction type must be 'income' or 'expense'."
+            )
+        return value
+
+    def validate_business_id(self, value):
+        user = self.context['request'].user
+        try:
+            return Business.objects.get(id=value, user=user)
+        except Business.DoesNotExist:
+            raise serializers.ValidationError(
+                "Business not found or does not belong to you."
+            )
+
+    def create(self, validated_data):
+        items_data = validated_data.pop('items')
+        business = validated_data.pop('business_id', None)
+        user = self.context['request'].user
+
+        if not business:
+            business = user.business
+
+        total_amount = sum(
+            Decimal(item['amount']) for item in items_data
+        )
+
+        transaction = Transaction.objects.create(
+            user=user,
+            business=business,
+            total_amount=total_amount,
+            **validated_data
+        )
+
+        TransactionItem.objects.bulk_create([
+            TransactionItem(
+                transaction=transaction,
+                **item
+            )
+            for item in items_data
+        ])
+
+        return transaction
+
+# 
+# =====================================================
+# Transaction update serializers going here
+class TransactionUpdateSerializer(serializers.ModelSerializer):
+    items = TransactionItemSerializer(many=True, required=False)
+    business_id = serializers.UUIDField(write_only=True, required=False)
+
+    class Meta:
+        model = Transaction
+        fields = [
+            'transaction_type',
+            'date',
+            'description',
+            'business_id',
+            'items',
+        ]
+
+    def validate_business_id(self, value):
+        user = self.context['request'].user
+        try:
+            return Business.objects.get(id=value, user=user)
+        except Business.DoesNotExist:
+            raise serializers.ValidationError(
+                "Business not found or does not belong to you."
+            )
+
+    def update(self, instance, validated_data):
+        items_data = validated_data.pop('items', None)
+        business = validated_data.pop('business_id', None)
+
+        if business:
+            instance.business = business
+
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+
+        if items_data is not None:
+            instance.items.all().delete()
+            TransactionItem.objects.bulk_create([
+                TransactionItem(
+                    transaction=instance,
+                    **item
+                )
+                for item in items_data
+            ])
+            instance.total_amount = sum(
+                Decimal(item['amount']) for item in items_data
+            )
+
+        instance.save()
+        return instance
+
+# =====================================================
+# Transaction list serializer here 
+class TransactionListSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Transaction
+        fields = [
+            'id',
+            'transaction_type',
+            'date',
+            'total_amount',
+        ]
+
+
+
 
 
 class TransactionSerializer(serializers.ModelSerializer):
@@ -120,7 +229,7 @@ class TransactionSerializer(serializers.ModelSerializer):
         
         # Calculate total from items
         total_amount = sum(Decimal(str(item['amount'])) for item in items_data)
-        # convert some from naira to kobo
+        # convert sum from naira to kobo
         total_amount = total_amount * Decimal('100')
         
         # Create transaction

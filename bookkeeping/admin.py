@@ -19,7 +19,7 @@ class TransactionAdmin(admin.ModelAdmin):
     list_display = ['date', 'transaction_type', 'total_amount', 'user', 'business', 'is_deleted']
     list_filter = ['transaction_type', 'is_deleted', 'date']
     search_fields = ['description', 'user__username']
-    readonly_fields = ['id', 'created_at', 'updated_at', 'total_amount']
+    readonly_fields = ['id', 'created_at', 'updated_at', ]
     inlines = [TransactionItemInline]
 
 

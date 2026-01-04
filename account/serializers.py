@@ -1,14 +1,25 @@
-from logging import error
 from django.conf import settings
 from django.contrib.auth.password_validation import validate_password
-from django.contrib.auth.hashers import check_password
-
+from django.db import transaction
+import uuid
 import jwt
 from rest_framework import serializers
 
 from account.models import PasswordResetOTP, User
 
 
+# model serializers for users
+class UserSerializer(serializers.ModelSerializer):
+    """
+    Serializer for User model
+    """
+    class Meta:
+        model = User
+        fields = ['id', 'username', 'email', 'first_name', 'last_name']
+        read_only_fields = ['id']
+
+
+# user registration serializer
 class UserRegistrationSerializer(serializers.Serializer):
     """
     Serializer for user registration with business creation
@@ -39,6 +50,7 @@ class UserRegistrationSerializer(serializers.Serializer):
         return data
 
 
+# password reset request serializer
 class PasswordResetRequestSerializer(serializers.Serializer):
     """
     Serializer for requesting a password reset
@@ -56,31 +68,8 @@ class PasswordResetRequestSerializer(serializers.Serializer):
         return value
 
 
-class PasswordOTPSendSerializer(serializers.Serializer):
-    """
-    Serializer for confirming a password reset
-    """
-    otp = serializers.CharField()
-    email = serializers.EmailField(write_only=True, min_length=8)
-
-    def validate(self, data):
-        """
-        Validate that pin is correct and active
-        """
-        try:
-           email = data['email']
-           otp = PasswordResetOTP.objects.filter(user__email=email).first()
-           if otp.is_valid():
-               return data
-           else: raise ValueError
-        except (TypeError, ValueError, OverflowError, User.DoesNotExist):
-            raise serializers.ValidationError("Invalid reset pin.")
-
-
+# password reset OTP verification serializer
 class PasswordOTPVerifySerializer(serializers.Serializer):
-    """
-    Serializer for verifying OTP during password reset
-    """
     otp = serializers.CharField()
     email = serializers.EmailField(write_only=True)
 
@@ -90,68 +79,133 @@ class PasswordOTPVerifySerializer(serializers.Serializer):
 
         try:
             user = User.objects.get(email=email)
-            record = PasswordResetOTP.objects.get(user=user)
-        except (User.DoesNotExist, PasswordResetOTP.DoesNotExist):
+        except User.DoesNotExist:
             raise serializers.ValidationError("Invalid reset pin.")
 
-        if not record.is_valid():
+        try:
+            record = PasswordResetOTP.objects.get(user=user)
+        except PasswordResetOTP.DoesNotExist:
+            raise serializers.ValidationError("Invalid reset pin.")
+
+        # Pure validation only
+        if not record.otp_valid():
             raise serializers.ValidationError("OTP expired or already used.")
 
-        if not check_password(str(otp), record.otp_hash):
+        if not str(otp) == record.otp:
             record.attempts += 1
             record.save(update_fields=["attempts"])
             raise serializers.ValidationError("Invalid reset pin.")
 
-        # Mark OTP as used
-        record.used = True
-        record.save(update_fields=["used"])
+        # Store for save()
+        self.user = user
+        self.record_id = record.id
+
+        return data
+
+    def save(self):
+        """
+        Burn OTP and mint exactly one JTI (atomic & race-safe)
+        """
+        with transaction.atomic():
+            record = (
+                PasswordResetOTP.objects
+                .select_for_update()
+                .get(pk=self.record_id)
+            )
+
+            if record.used:
+                raise serializers.ValidationError("OTP already used.")
+
+            jti = uuid.uuid4().hex
+
+            record.used = True
+            record.reset_jti = jti
+            record.save(update_fields=["used", "reset_jti"])
 
         return {
-            "user": user
+            "user": self.user,
+            "jti": jti,
         }
 
-class ChangePasswordSerializer(serializers.Serializer):
-    """
-    Serializer for changing password while authenticated
-    """
+
+# password reset serializer
+class PasswordResetSerializer(serializers.Serializer):
     jwt = serializers.CharField(write_only=True)
     new_password = serializers.CharField(write_only=True, min_length=8)
     new_password_confirm = serializers.CharField(write_only=True, min_length=8)
 
     def validate(self, data):
-        """
-        Validate that passwords match
-        """
+        token = data["jwt"]
 
-        token = data.get('jwt')
         try:
             payload = jwt.decode(
                 token,
                 settings.INTERNAL_JWT_SECRET,
-                algorithms=["HS256"]
+                algorithms=["HS256"],
             )
-        except:
-            raise serializers.ValidationError("Something went wrong. Please try again.")
-        
-        if payload.get("purpose") != "password_reset":
-            raise serializers.ValidationError("Something went wrong. Please try again.")
-        
-        if data['new_password'] != data['new_password_confirm']:
-            raise serializers.ValidationError("New passwords do not match.")
-        
-        try:
-            user = User.objects.get(email=payload.get("email"))
-        except User.DoesNotExist:
+        except jwt.ExpiredSignatureError:
+            raise serializers.ValidationError("Reset token expired.")
+        except jwt.InvalidTokenError:
             raise serializers.ValidationError("Invalid reset token.")
-          # Django password validators
-        validate_password(data["new_password"], user=user)
 
-        self.user = user
-        self.payload = payload
+        if payload.get("purpose") != "password_reset":
+            raise serializers.ValidationError("Invalid reset token.")
+
+        if data["new_password"] != data["new_password_confirm"]:
+            raise serializers.ValidationError("New passwords do not match.")
+
+        try:
+            otp_record = PasswordResetOTP.objects.get(
+                reset_jti=payload.get("jti")
+            )
+        except PasswordResetOTP.DoesNotExist:
+            raise serializers.ValidationError("Invalid or expired reset token.")
+
+        validate_password(data["new_password"], user=otp_record.user)
+
+        self.otp_record = otp_record
+        self.user = otp_record.user
         return data
 
     def save(self):
-        self.user.set_password(self.validated_data["new_password"])
-        self.user.save(update_fields=["password"])
-        return self.user
+        with transaction.atomic():
+            otp_record = (
+                PasswordResetOTP.objects
+                .select_for_update()
+                .get(pk=self.otp_record.pk)
+            )
 
+            # 🔐 burn the token
+            otp_record.reset_jti = None
+            otp_record.jti_used = True
+            otp_record.save(update_fields=["reset_jti", "jti_used"])
+
+            self.user.set_password(self.validated_data["new_password"])
+            self.user.save(update_fields=["password"])
+
+        return self.user
+    
+
+# change password serializer
+class ChangePasswordSerializer(serializers.Serializer):
+    old_password = serializers.CharField(write_only=True)
+    new_password = serializers.CharField(write_only=True, min_length=8)
+    new_password_confirm = serializers.CharField(write_only=True, min_length=8)
+
+    def validate_old_password(self, value):
+        user = self.context['request'].user
+        if not user.check_password(value):
+            raise serializers.ValidationError("Old password is incorrect.")
+        return value
+
+    def validate(self, data):
+        if data["new_password"] != data["new_password_confirm"]:
+            raise serializers.ValidationError("New passwords do not match.")
+        validate_password(data["new_password"], user=self.context['request'].user)
+        return data
+
+    def save(self):
+        user = self.context['request'].user
+        user.set_password(self.validated_data["new_password"])
+        user.save(update_fields=["password"])
+        return user

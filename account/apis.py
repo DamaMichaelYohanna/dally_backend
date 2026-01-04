@@ -1,9 +1,9 @@
 import logging
 from datetime import timedelta
 from django.contrib.auth.tokens import default_token_generator
-from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
+from django.utils.http import urlsafe_base64_decode
 from django.utils.timezone import now
-from django.utils.encoding import force_bytes, force_str
+from django.utils.encoding import force_str
 from django.core.mail import send_mail
 from django.conf import settings
 from django.db import transaction
@@ -11,14 +11,15 @@ from django.db import transaction
 import jwt
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework import status
-from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.decorators import api_view, permission_classes, throttle_classes
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from drf_spectacular.utils import extend_schema, OpenApiExample
 
-from account.utils import create_or_replace_otp
+from account.utils import OTPVerifyThrottle, create_or_replace_otp
 
-from .serializers import PasswordOTPVerifySerializer, UserRegistrationSerializer, PasswordResetRequestSerializer, ChangePasswordSerializer
+from .serializers import ChangePasswordSerializer, PasswordOTPVerifySerializer, UserRegistrationSerializer, PasswordResetRequestSerializer, PasswordResetSerializer
 from bookkeeping.models import Business
 from account.models import PasswordResetOTP, User
 
@@ -28,7 +29,7 @@ logger = logging.getLogger(__name__)
 @extend_schema(
     summary="Register new user",
     description="Register a new user account and automatically create their business. Returns user details and JWT tokens.",
-    tags=["Authentication"],
+    tags=["auth"],
     request=UserRegistrationSerializer,
     examples=[
         OpenApiExample(
@@ -178,7 +179,7 @@ def register(request):
 @extend_schema(
     summary="Request password reset",
     description="Request a password reset pin. In development mode, returns the reset URL. In production, sends an email.",
-    tags=["Authentication"],
+    tags=["auth"],
     request=PasswordResetRequestSerializer,
     examples=[
         OpenApiExample(
@@ -223,18 +224,18 @@ def password_reset_request(request):
                     subject='Password Reset Request - Dally Bookkeeping',
                     message=f'''Hello {user.username},
                     
-                    You have requested to reset your password for your Dally Bookkeeping account.
+You have requested to reset your password for your Dally Bookkeeping account.
 
-                    Here is your six (6) digit pin
+Here is your six (6) digit pin
 
-                    {otp}
+{otp}
 
-                    This pin will expire in 10 mins.
+This pin will expire in 10 mins.
 
-                    If you did not request this password reset, please ignore this email.
+If you did not request this password reset, please ignore this email.
 
-                    Best regards,
-                    Dally Bookkeeping Team
+Best regards,
+Dally Bookkeeping Team
                     ''',
                     from_email=settings.DEFAULT_FROM_EMAIL,
                     recipient_list=[email],
@@ -278,7 +279,7 @@ def password_reset_request(request):
 @extend_schema(
     summary="Confirm password reset pin",
     description="Confirm password reset pin sent via email.",
-    tags=["Authentication"],
+    tags=["auth"],
     request=PasswordOTPVerifySerializer,
     examples=[
         OpenApiExample(
@@ -297,6 +298,7 @@ def password_reset_request(request):
 )
 @api_view(['POST'])
 @permission_classes([AllowAny])
+@throttle_classes([OTPVerifyThrottle])
 def password_otp_verify(request):
     """
     Confirm password reset pin
@@ -309,11 +311,12 @@ def password_otp_verify(request):
     serializer = PasswordOTPVerifySerializer(data=request.data)
     
     if serializer.is_valid():
-        user = serializer.validated_data['user']
+        user_and_token = serializer.save()
         reset_token = jwt.encode(
         {
-            "email": user.email,
+            "email": user_and_token['user'].email,
             "purpose": "password_reset",
+            "jti": user_and_token['jti'],
             "exp": now() + timedelta(minutes=10)
         },
         settings.INTERNAL_JWT_SECRET,
@@ -332,13 +335,13 @@ def password_otp_verify(request):
 @extend_schema(
     summary="Reset password using pin",
     description="Reset password using using jwt token obtained after verifying pin.",
-    tags=["Authentication"],
-    request=PasswordOTPVerifySerializer,
+    tags=["auth"],
+    request=PasswordResetSerializer,
     examples=[
         OpenApiExample(
             'Password Reset Confirm',
             value={
-                'reset_token': 'your_jwt_token_here',
+                'jwt': 'your_jwt_token_here',
                 'new_password': "newpassword123",
                 'new_password_confirm': "newpassword123"
             },
@@ -363,7 +366,7 @@ def password_reset_confirm(request):
         "new_password_confirm": "newpassword123"
     }
     """
-    serializer = ChangePasswordSerializer(data=request.data)
+    serializer = PasswordResetSerializer(data=request.data)
     
     if serializer.is_valid():
         serializer.save()
@@ -371,14 +374,22 @@ def password_reset_confirm(request):
             'message': 'Password has been reset successfully.'
         }, status=status.HTTP_200_OK)
     
-    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    error_message = None
+    if 'non_field_errors' in serializer.errors:
+        error_message = ' '.join(serializer.errors['non_field_errors'])
+    elif serializer.errors:
+        first_key = next(iter(serializer.errors))
+        error_message = ' '.join(serializer.errors[first_key])
+    else:
+        error_message = 'Invalid input.'
+    return Response({"status": "error", "message": error_message}, status=status.HTTP_400_BAD_REQUEST)
 
 
 @extend_schema(
     summary="Change password",
     description="Change password for the authenticated user. Requires old password verification.",
-    tags=["Authentication"],
-    request=ChangePasswordSerializer,
+    tags=["auth"],
+    request=PasswordResetSerializer,
     examples=[
         OpenApiExample(
             'Change Password',
@@ -397,6 +408,7 @@ def password_reset_confirm(request):
     }
 )
 @api_view(['POST'])
+@permission_classes([IsAuthenticated])
 def change_password(request):
     """
     Change password for authenticated user
@@ -416,23 +428,26 @@ def change_password(request):
     )
     
     if serializer.is_valid():
-        # Set new password
-        user = request.user
-        new_password = serializer.validated_data['new_password']
-        user.set_password(new_password)
-        user.save()
-        
+        serializer.save()
         return Response({
             'message': 'Password changed successfully.'
         }, status=status.HTTP_200_OK)
     
-    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    error_message = None
+    if 'non_field_errors' in serializer.errors:
+        error_message = ' '.join(serializer.errors['non_field_errors'])
+    elif serializer.errors:
+        first_key = next(iter(serializer.errors))
+        error_message = ' '.join(serializer.errors[first_key])
+    else:
+        error_message = 'Invalid input.'
+    return Response({"status": "error", "message": error_message}, status=status.HTTP_400_BAD_REQUEST)
 
 
 @extend_schema(
     summary="Verify password reset token",
     description="Check if a password reset token is valid without consuming it.",
-    tags=["Authentication"],
+    tags=["auth"],
     responses={
         200: {
             'type': 'object',
