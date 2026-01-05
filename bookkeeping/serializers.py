@@ -2,6 +2,7 @@ from rest_framework import serializers
 from django.contrib.auth.models import User
 from .models import Business, Transaction, TransactionItem
 from decimal import Decimal
+from django.db import transaction
 
 
 class BusinessSerializer(serializers.ModelSerializer):
@@ -162,241 +163,258 @@ class TransactionListSerializer(serializers.ModelSerializer):
 
 
 
-
+class TransactionItemSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = TransactionItem
+        fields = ['id', 'description', 'amount', 'category']
+        read_only_fields = ['id']
 
 class TransactionSerializer(serializers.ModelSerializer):
-    """
-    Serializer for Transaction model with nested items.
-    Supports creating and updating transactions with items in a single request.
-    All amounts are in Naira (NGN).
-    """
-    items = TransactionItemSerializer(many=True)
-    user = serializers.PrimaryKeyRelatedField(read_only=True)
-    business = serializers.PrimaryKeyRelatedField(read_only=True)
-    business_id = serializers.UUIDField(write_only=True, required=False)
-    total_amount = serializers.DecimalField(
-        max_digits=12, decimal_places=2, read_only=True,
-        help_text="Total amount in Naira (NGN)"
-    )
-    
-    class Meta:
-        model = Transaction
-        fields = [
-            'id', 'user', 'business', 'business_id', 'transaction_type', 
-            'date', 'description', 'total_amount', 'items', 
-            'is_deleted', 'created_at', 'updated_at'
-        ]
-        read_only_fields = ['id', 'user', 'business', 'total_amount', 'created_at', 'updated_at']
-
-    def validate_items(self, value):
-        """
-        Validate that at least one item is provided
-        """
-        if not value or len(value) == 0:
-            raise serializers.ValidationError("At least one transaction item is required.")
-        return value
-
-    def validate_transaction_type(self, value):
-        """
-        Validate transaction type
-        """
-        if value not in ['income', 'expense']:
-            raise serializers.ValidationError("Transaction type must be 'income' or 'expense'.")
-        return value
-
-    def validate_business_id(self, value):
-        """
-        Validate that the business belongs to the user
-        """
-        user = self.context['request'].user
-        try:
-            business = Business.objects.get(id=value, user=user)
-            return business
-        except Business.DoesNotExist:
-            raise serializers.ValidationError("Business not found or does not belong to you.")
-
-    def create(self, validated_data):
-        """
-        Create transaction with nested items
-        """
-        items_data = validated_data.pop('items')
-        user = self.context['request'].user
-        
-        # Get business - either from business_id or user's default business
-        business = validated_data.pop('business_id', None)
-        if not business:
-            business = user.business
-        
-        # Calculate total from items
-        total_amount = sum(Decimal(str(item['amount'])) for item in items_data)
-        # convert sum from naira to kobo
-        total_amount = total_amount * Decimal('100')
-        
-        # Create transaction
-        transaction = Transaction.objects.create(
-            user=user,
-            business=business,
-            total_amount=total_amount,
-            **validated_data
-        )
-        
-        # Create items
-        for item_data in items_data:
-            TransactionItem.objects.create(transaction=transaction, **item_data)
-        
-        # Refresh to get updated values
-        transaction.refresh_from_db()
-        
-        return transaction
-
-    def update(self, instance, validated_data):
-        """
-        Update transaction and its items
-        """
-        items_data = validated_data.pop('items', None)
-        business = validated_data.pop('business_id', None)
-        
-        # Update business if provided
-        if business:
-            instance.business = business
-        
-        # Update transaction fields
-        for attr, value in validated_data.items():
-            setattr(instance, attr, value)
-        
-        # Update items if provided
-        if items_data is not None:
-            # Delete existing items
-            instance.items.all().delete()
-            
-            # Create new items
-            for item_data in items_data:
-                TransactionItem.objects.create(transaction=instance, **item_data)
-            
-            # Recalculate total
-            instance.total_amount = sum(Decimal(str(item['amount'])) for item in items_data)
-        
-        instance.save()
-        return instance
-
-
-class TransactionListSerializer(serializers.ModelSerializer):
-    """
-    Lightweight serializer for listing transactions.
-    All amounts are in Naira (NGN).
-    """
-    items_count = serializers.SerializerMethodField()
-    total_amount = serializers.DecimalField(
-        max_digits=12, decimal_places=2, read_only=True,
-        help_text="Total amount in Naira (NGN)"
-    )
+    items = TransactionItemSerializer(many=True, required=False)
+    # items_count is read-only, useful if you decide to return the created object
+    items_count = serializers.IntegerField(source='items.count', read_only=True)
     
     class Meta:
         model = Transaction
         fields = [
             'id', 'transaction_type', 'date', 'description', 
-            'total_amount', 'items_count', 'created_at'
+            'total_amount', 'items_count', 'created_at', 'items'
         ]
-        read_only_fields = fields
+        read_only_fields = ['id', 'created_at', 'items_count']
+        extra_kwargs = {
+            'total_amount': {'required': False}  # Optional, calculated if items exist
+        }
+    def create(self, validated_data):
+        items_data = validated_data.pop('items', [])
+        user = self.context['request'].user
+        
+        try:
+            business = Business.objects.get(user=user)
+        except Business.DoesNotExist:
+            raise serializers.ValidationError({"detail": "User does not have a business configured."})
+        # Calculate Total:
+        # If items exist, sum them up. Otherwise, require total_amount.
+        if items_data:
+            calculated_total = sum(Decimal(str(item['amount'])) for item in items_data)
+            validated_data['total_amount'] = calculated_total
+        elif validated_data.get('total_amount') is None:
+             raise serializers.ValidationError({"total_amount": "This field is required if no items are provided."})
+        validated_data['business'] = business
+        validated_data['user'] = user
+        with transaction.atomic():
+            transaction_instance = Transaction.objects.create(**validated_data)
+            
+            for item_data in items_data:
+                TransactionItem.objects.create(transaction=transaction_instance, **item_data)
+        
+        return transaction_instance
 
-    def get_items_count(self, obj):
-        return obj.items.count()
 
 
-# Summary Serializers
 
-class DailySummarySerializer(serializers.Serializer):
-    """
-    Serializer for daily summary response.
-    All monetary values are output in Naira (NGN).
-    """
-    date = serializers.DateField()
-    currency = serializers.CharField()
-    total_income = serializers.DecimalField(
-        max_digits=15, decimal_places=2,
-        help_text="Total income in Naira"
-    )
-    total_expense = serializers.DecimalField(
-        max_digits=15, decimal_places=2,
-        help_text="Total expense in Naira"
-    )
-    net_cash = serializers.DecimalField(
-        max_digits=15, decimal_places=2,
-        help_text="Net cash (income - expense) in Naira"
-    )
+
+
+
+# class TransactionSerializer(serializers.ModelSerializer):
+#     """
+#     Serializer for Transaction model with nested items.
+#     Supports creating and updating transactions with items in a single request.
+#     All amounts are in Naira (NGN).
+#     """
+#     items = TransactionItemSerializer(many=True)
+#     user = serializers.PrimaryKeyRelatedField(read_only=True)
+#     business = serializers.PrimaryKeyRelatedField(read_only=True)
+#     business_id = serializers.UUIDField(write_only=True, required=False)
+#     total_amount = serializers.DecimalField(
+#         max_digits=12, decimal_places=2, read_only=True,
+#         help_text="Total amount in Naira (NGN)"
+#     )
     
-    def to_representation(self, instance):
-        """Convert kobo to Naira for output"""
-        representation = super().to_representation(instance)
-        # Convert from kobo to naira
-        for field in ['total_income', 'total_expense', 'net_cash']:
-            if field in instance:
-                representation[field] = str(Decimal(str(instance[field])) / Decimal('100'))
-        return representation
+#     class Meta:
+#         model = Transaction
+#         fields = [
+#             'id', 'user', 'business', 'business_id', 'transaction_type', 
+#             'date', 'description', 'total_amount', 'items', 
+#             'is_deleted', 'created_at', 'updated_at'
+#         ]
+#         read_only_fields = ['id', 'user', 'business', 'total_amount', 'created_at', 'updated_at']
+
+#     def validate_items(self, value):
+#         """
+#         Validate that at least one item is provided
+#         """
+#         if not value or len(value) == 0:
+#             raise serializers.ValidationError("At least one transaction item is required.")
+#         return value
+
+#     def validate_transaction_type(self, value):
+#         """
+#         Validate transaction type
+#         """
+#         if value not in ['income', 'expense']:
+#             raise serializers.ValidationError("Transaction type must be 'income' or 'expense'.")
+#         return value
+
+#     def validate_business_id(self, value):
+#         """
+#         Validate that the business belongs to the user
+#         """
+#         user = self.context['request'].user
+#         try:
+#             business = Business.objects.get(id=value, user=user)
+#             return business
+#         except Business.DoesNotExist:
+#             raise serializers.ValidationError("Business not found or does not belong to you.")
+
+#     def create(self, validated_data):
+#         """
+#         Create transaction with nested items
+#         """
+#         items_data = validated_data.pop('items')
+#         user = self.context['request'].user
+        
+#         business = user.business
+        
+#         # Calculate total from items
+#         total_amount = sum(Decimal(str(item['amount'])) for item in items_data)
+#         # convert sum from naira to kobo
+#         total_amount = total_amount * Decimal('100')
+        
+#         # Create transaction
+#         transaction = Transaction.objects.create(
+#             user=user,
+#             business=business,
+#             total_amount=total_amount,
+#             **validated_data
+#         )
+        
+#         # Create items
+#         for item_data in items_data:
+#             TransactionItem.objects.create(transaction=transaction, **item_data)
+        
+#         # Refresh to get updated values
+#         transaction.refresh_from_db()
+        
+#         return transaction
+
+#     def update(self, instance, validated_data):
+#         """
+#         Update transaction and its items
+#         """
+#         items_data = validated_data.pop('items', None)
+#         business = validated_data.pop('business_id', None)
+        
+#         # Update business if provided
+#         if business:
+#             instance.business = business
+        
+#         # Update transaction fields
+#         for attr, value in validated_data.items():
+#             setattr(instance, attr, value)
+        
+#         # Update items if provided
+#         if items_data is not None:
+#             # Delete existing items
+#             instance.items.all().delete()
+            
+#             # Create new items
+#             for item_data in items_data:
+#                 TransactionItem.objects.create(transaction=instance, **item_data)
+            
+#             # Recalculate total
+#             instance.total_amount = sum(Decimal(str(item['amount'])) for item in items_data)
+        
+#         instance.save()
+#         return instance
 
 
-class DateRangeSummarySerializer(serializers.Serializer):
-    """
-    Serializer for date range summary response.
-    All monetary values are output in Naira (NGN).
-    """
-    start_date = serializers.DateField()
-    end_date = serializers.DateField()
-    currency = serializers.CharField()
-    total_income = serializers.DecimalField(
-        max_digits=15, decimal_places=2,
-        help_text="Total income in Naira"
-    )
-    total_expense = serializers.DecimalField(
-        max_digits=15, decimal_places=2,
-        help_text="Total expense in Naira"
-    )
-    net_profit = serializers.DecimalField(
-        max_digits=15, decimal_places=2,
-        help_text="Net profit (income - expense) in Naira"
-    )
+# class TransactionListSerializer(serializers.ModelSerializer):
+#     """
+#     Lightweight serializer for listing transactions.
+#     All amounts are in Naira (NGN).
+#     """
+#     items_count = serializers.SerializerMethodField()
+#     total_amount = serializers.DecimalField(
+#         max_digits=12, decimal_places=2, read_only=True,
+#         help_text="Total amount in Naira (NGN)"
+#     )
     
-    def to_representation(self, instance):
-        """Convert kobo to Naira for output"""
-        representation = super().to_representation(instance)
-        # Convert from kobo to naira
-        for field in ['total_income', 'total_expense', 'net_profit']:
-            if field in instance:
-                representation[field] = str(Decimal(str(instance[field])) / Decimal('100'))
-        return representation
+#     class Meta:
+#         model = Transaction
+#         fields = [
+#             'id', 'transaction_type', 'date', 'description', 
+#             'total_amount', 'items_count', 'created_at'
+#         ]
+#         read_only_fields = fields
+
+#     def get_items_count(self, obj):
+#         return obj.items.count()
 
 
-class ProfitLossSerializer(serializers.Serializer):
-    """
-    Serializer for profit and loss statement response.
-    All monetary values are output in Naira (NGN).
-    """
-    start_date = serializers.DateField()
-    end_date = serializers.DateField()
-    currency = serializers.CharField()
-    total_sales = serializers.DecimalField(
-        max_digits=15, decimal_places=2,
-        help_text="Total sales (income) in Naira"
-    )
-    total_purchases = serializers.DecimalField(
-        max_digits=15, decimal_places=2,
-        help_text="Total purchases (expense) in Naira"
-    )
-    gross_profit = serializers.DecimalField(
-        max_digits=15, decimal_places=2,
-        help_text="Gross profit (sales - purchases) in Naira"
-    )
+
+
+# class DateRangeSummarySerializer(serializers.Serializer):
+#     """
+#     Serializer for date range summary response.
+#     All monetary values are output in Naira (NGN).
+#     """
+#     start_date = serializers.DateField()
+#     end_date = serializers.DateField()
+#     currency = serializers.CharField()
+#     total_income = serializers.DecimalField(
+#         max_digits=15, decimal_places=2,
+#         help_text="Total income in Naira"
+#     )
+#     total_expense = serializers.DecimalField(
+#         max_digits=15, decimal_places=2,
+#         help_text="Total expense in Naira"
+#     )
+#     net_profit = serializers.DecimalField(
+#         max_digits=15, decimal_places=2,
+#         help_text="Net profit (income - expense) in Naira"
+#     )
     
-    def to_representation(self, instance):
-        """Convert kobo to Naira for output"""
-        representation = super().to_representation(instance)
-        # Convert from kobo to naira
-        for field in ['total_sales', 'total_purchases', 'gross_profit']:
-            if field in instance:
-                representation[field] = str(Decimal(str(instance[field])) / Decimal('100'))
-        return representation
+#     def to_representation(self, instance):
+#         """Convert kobo to Naira for output"""
+#         representation = super().to_representation(instance)
+#         # Convert from kobo to naira
+#         for field in ['total_income', 'total_expense', 'net_profit']:
+#             if field in instance:
+#                 representation[field] = str(Decimal(str(instance[field])) / Decimal('100'))
+#         return representation
 
 
+# class ProfitLossSerializer(serializers.Serializer):
+#     """
+#     Serializer for profit and loss statement response.
+#     All monetary values are output in Naira (NGN).
+#     """
+#     start_date = serializers.DateField()
+#     end_date = serializers.DateField()
+#     currency = serializers.CharField()
+#     total_sales = serializers.DecimalField(
+#         max_digits=15, decimal_places=2,
+#         help_text="Total sales (income) in Naira"
+#     )
+#     total_purchases = serializers.DecimalField(
+#         max_digits=15, decimal_places=2,
+#         help_text="Total purchases (expense) in Naira"
+#     )
+#     gross_profit = serializers.DecimalField(
+#         max_digits=15, decimal_places=2,
+#         help_text="Gross profit (sales - purchases) in Naira"
+#     )
+    
+#     def to_representation(self, instance):
+#         """Convert kobo to Naira for output"""
+#         representation = super().to_representation(instance)
+#         # Convert from kobo to naira
+#         for field in ['total_sales', 'total_purchases', 'gross_profit']:
+#             if field in instance:
+#                 representation[field] = str(Decimal(str(instance[field])) / Decimal('100'))
+#         return representation
+
+# very important serializer below
 class TaxSummarySerializer(serializers.Serializer):
     """
     Serializer for Nigerian tax summary response.

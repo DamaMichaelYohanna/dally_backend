@@ -1,4 +1,3 @@
-import os
 from urllib.parse import urlencode
 from rest_framework import viewsets, status
 from django.http import HttpResponse
@@ -7,7 +6,6 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from django.db.models import Sum, Count, Q
-from decimal import Decimal
 from datetime import datetime, date, timedelta
 from drf_spectacular.utils import extend_schema, extend_schema_view, OpenApiParameter, OpenApiExample
 from drf_spectacular.types import OpenApiTypes
@@ -31,9 +29,6 @@ from .serializers import (
     TransactionSerializer, 
     TransactionListSerializer,
     TransactionItemSerializer,
-    DailySummarySerializer,
-    DateRangeSummarySerializer,
-    ProfitLossSerializer,
     TaxSummarySerializer
 )
 from .permissions import IsOwner, IsBusinessOwner
@@ -45,6 +40,7 @@ from django.core.cache import cache
 from django.utils.dateparse import parse_date
 from rest_framework import status
 from rest_framework.pagination import PageNumberPagination
+from rest_framework import generics
 
 
 class DashboardView(APIView):
@@ -367,7 +363,15 @@ class TaxView(APIView):
         return Response(serializer.data)
 
 
-        
+
+class TransactionCreateView(generics.CreateAPIView):
+    queryset = Transaction.objects.all()
+    serializer_class = TransactionSerializer
+    permission_classes = [IsAuthenticated]
+
+
+
+
 
 
 # @extend_schema_view(
@@ -807,221 +811,4 @@ class TaxView(APIView):
 #         return TransactionItem.objects.filter(
 #             transaction__user=self.request.user
 #         ).select_related('transaction')
-
-
-
-class SummaryViewSet(viewsets.ViewSet):
-    """
-    ViewSet for summary and analytics endpoints.
-    All calculations are performed dynamically from transaction data.
-    """
-    permission_classes = [IsAuthenticated]
-
-    @extend_schema(
-        summary="Get daily summary",
-        description="Calculate total income, expense, and net cash for a specific date. All amounts are in Naira (NGN).",
-        parameters=[
-            OpenApiParameter(
-                name='date',
-                type=OpenApiTypes.DATE,
-                location=OpenApiParameter.QUERY,
-                required=True,
-                description='Date to calculate summary for (YYYY-MM-DD)'
-            ),
-            OpenApiParameter(
-                name='business_id',
-                type=OpenApiTypes.UUID,
-                location=OpenApiParameter.QUERY,
-                required=False,
-                description='Optional: Filter by specific business'
-            ),
-        ],
-        responses={200: DailySummarySerializer},
-        tags=["Summaries"]
-    )
-    @action(detail=False, methods=['get'], url_path='daily')
-    def daily(self, request):
-        """
-        GET /api/summary/daily/?date=YYYY-MM-DD&business_id=uuid
-        
-        Returns daily income, expense, and net cash.
-        """
-        # Validate date parameter
-        date_str = request.query_params.get('date')
-        if not date_str:
-            return Response(
-                {'error': 'date parameter is required (YYYY-MM-DD)'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-        
-        try:
-            target_date = datetime.strptime(date_str, '%Y-%m-%d').date()
-        except ValueError:
-            return Response(
-                {'error': 'Invalid date format. Use YYYY-MM-DD'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-        
-        # Optional business filter
-        business_id = request.query_params.get('business_id')
-        
-        # Calculate summary
-        summary = daily_summary(
-            user=request.user,
-            target_date=target_date,
-            business_id=business_id
-        )
-        
-        serializer = DailySummarySerializer(summary)
-        return Response(serializer.data)
-
-    @extend_schema(
-        summary="Get date range summary",
-        description="Calculate total income, expense, and net profit for a date range. All amounts are in Naira (NGN).",
-        parameters=[
-            OpenApiParameter(
-                name='start_date',
-                type=OpenApiTypes.DATE,
-                location=OpenApiParameter.QUERY,
-                required=True,
-                description='Start date (YYYY-MM-DD)'
-            ),
-            OpenApiParameter(
-                name='end_date',
-                type=OpenApiTypes.DATE,
-                location=OpenApiParameter.QUERY,
-                required=True,
-                description='End date (YYYY-MM-DD)'
-            ),
-            OpenApiParameter(
-                name='business_id',
-                type=OpenApiTypes.UUID,
-                location=OpenApiParameter.QUERY,
-                required=False,
-                description='Optional: Filter by specific business'
-            ),
-        ],
-        responses={200: DateRangeSummarySerializer},
-        tags=["Summaries"]
-    )
-    @action(detail=False, methods=['get'], url_path='range')
-    def range(self, request):
-        """
-        GET /api/summary/range/?start_date=YYYY-MM-DD&end_date=YYYY-MM-DD&business_id=uuid
-        
-        Returns total income, expense, and net profit for date range.
-        """
-        # Validate parameters
-        start_date_str = request.query_params.get('start_date')
-        end_date_str = request.query_params.get('end_date')
-        
-        if not start_date_str or not end_date_str:
-            return Response(
-                {'error': 'start_date and end_date parameters are required (YYYY-MM-DD)'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-        
-        try:
-            start_date = datetime.strptime(start_date_str, '%Y-%m-%d').date()
-            end_date = datetime.strptime(end_date_str, '%Y-%m-%d').date()
-        except ValueError:
-            return Response(
-                {'error': 'Invalid date format. Use YYYY-MM-DD'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-        
-        if start_date > end_date:
-            return Response(
-                {'error': 'start_date must be before or equal to end_date'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-        
-        # Optional business filter
-        business_id = request.query_params.get('business_id')
-        
-        # Calculate summary
-        summary = date_range_summary(
-            user=request.user,
-            start_date=start_date,
-            end_date=end_date,
-            business_id=business_id
-        )
-        
-        serializer = DateRangeSummarySerializer(summary)
-        return Response(serializer.data)
-
-    @extend_schema(
-        summary="Get profit and loss statement",
-        description="Calculate profit and loss statement for a date range. All amounts are in Naira (NGN).",
-        parameters=[
-            OpenApiParameter(
-                name='start_date',
-                type=OpenApiTypes.DATE,
-                location=OpenApiParameter.QUERY,
-                required=True,
-                description='Start date (YYYY-MM-DD)'
-            ),
-            OpenApiParameter(
-                name='end_date',
-                type=OpenApiTypes.DATE,
-                location=OpenApiParameter.QUERY,
-                required=True,
-                description='End date (YYYY-MM-DD)'
-            ),
-            OpenApiParameter(
-                name='business_id',
-                type=OpenApiTypes.UUID,
-                location=OpenApiParameter.QUERY,
-                required=False,
-                description='Optional: Filter by specific business'
-            ),
-        ],
-        responses={200: ProfitLossSerializer},
-        tags=["Summaries"]
-    )
-    @action(detail=False, methods=['get'], url_path='profit-loss')
-    def profit_loss(self, request):
-        """
-        GET /api/summary/profit-loss/?start_date=YYYY-MM-DD&end_date=YYYY-MM-DD&business_id=uuid
-        
-        Returns profit and loss statement with sales, purchases, and gross profit.
-        """
-        # Validate parameters
-        start_date_str = request.query_params.get('start_date')
-        end_date_str = request.query_params.get('end_date')
-        
-        if not start_date_str or not end_date_str:
-            return Response(
-                {'error': 'start_date and end_date parameters are required (YYYY-MM-DD)'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-        
-        try:
-            start_date = datetime.strptime(start_date_str, '%Y-%m-%d').date()
-            end_date = datetime.strptime(end_date_str, '%Y-%m-%d').date()
-        except ValueError:
-            return Response(
-                {'error': 'Invalid date format. Use YYYY-MM-DD'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-        
-        if start_date > end_date:
-            return Response(
-                {'error': 'start_date must be before or equal to end_date'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-        
-        # Optional business filter
-        business_id = request.query_params.get('business_id')
-        
-        # Calculate profit and loss
-        pl_data = profit_and_loss(
-            user=request.user,
-            start_date=start_date,
-            end_date=end_date,
-            business_id=business_id
-        )
-        
-        serializer = ProfitLossSerializer(pl_data)
-        return Response(serializer.data)
 
