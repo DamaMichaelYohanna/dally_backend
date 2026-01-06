@@ -43,12 +43,26 @@ from rest_framework.pagination import PageNumberPagination
 from rest_framework import generics
 
 
+
+def get_user_cache_version(user_id):
+    """
+    Get the current cache version for a user, initializing it if it doesn't exist.
+    """
+    version_key = f'user_cache_version:{user_id}'
+    version = cache.get(version_key)
+    if version is None:
+        version = 1
+        cache.set(version_key, version, timeout=None)
+    return version
+
+
 class DashboardView(APIView):
     permission_classes = [IsAuthenticated, IsOwner]
 
     def get(self, request):
         user = request.user
-        cach_key = f'dashboard:{user.id}'
+        version = get_user_cache_version(user.id)
+        cach_key = f'dashboard:{user.id}:v{version}'
         cached_data = cache.get(cach_key)
         if cached_data:
             return Response(cached_data)
@@ -89,6 +103,7 @@ class DashboardView(APIView):
             "transactions_week": summarize(base_qs.filter(date__gte=date.today()-timedelta(days=7))),
             "transactions_month": summarize(base_qs.filter(date__gte=date.today()-timedelta(days=30))),
         }
+        cache.set(cach_key, data, timeout=300)
         return Response(data)
 
 
@@ -130,9 +145,9 @@ class TransactionView(APIView):
     def get(self, request):
         user = request.user
         params = request.query_params.dict()
-        # Create a unique cache key based on user and query params
-        # TODO: Consider more advanced cache key generation if needed
-        cache_key = f"transaction_list:{user.id}:{urlencode(sorted(params.items()))}"
+        version = get_user_cache_version(user.id)
+        # Create a unique cache key based on user, query params and version
+        cache_key = f"transaction_list:{user.id}:v{version}:{urlencode(sorted(params.items()))}"
 
         cached_data = cache.get(cache_key)
         if cached_data:
@@ -187,7 +202,8 @@ class SummaryView(APIView):
     permission_classes = [IsAuthenticated]
     def get(self, request):
         user = request.user
-        cache_key = f'summary:{user.id}'
+        version = get_user_cache_version(user.id)
+        cache_key = f'summary:{user.id}:v{version}'
         cached_data = cache.get(cache_key)  
         if cached_data:
             return Response(cached_data)
