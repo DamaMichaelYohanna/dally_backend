@@ -55,7 +55,7 @@ class User(AbstractUser):
 class SubscriptionPlan(models.Model):
     name = models.CharField(max_length=100)
     paystack_plan_id = models.CharField(max_length=100, unique=True)
-    amount = models.DecimalField(max_digits=12, decimal_digits=2)
+    amount = models.DecimalField(max_digits=12, decimal_places=2)
     interval = models.CharField(max_length=20, choices=[
         ('hourly', 'Hourly'),
         ('daily', 'Daily'),

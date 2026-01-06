@@ -201,3 +201,4 @@ DEFAULT_FROM_EMAIL = config('DEFAULT_FROM_EMAIL', default=EMAIL_HOST_USER)
 AUTH_USER_MODEL = 'account.User'
 
 INTERNAL_JWT_SECRET = config('INTERNAL_JWT_SECRET', default='change_this_in_production')
+PAYSTACK_SECRET_KEY = config('PAYSTACK_SECRET_KEY', default='')
