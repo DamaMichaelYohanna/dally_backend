@@ -209,3 +209,36 @@ class ChangePasswordSerializer(serializers.Serializer):
         user.set_password(self.validated_data["new_password"])
         user.save(update_fields=["password"])
         return user
+
+
+class UserProfileSerializer(serializers.ModelSerializer):
+    business = serializers.SerializerMethodField()
+    subscription = serializers.SerializerMethodField()
+
+    class Meta:
+        model = User
+        fields = ['id', 'email', 'first_name', 'last_name', 'business', 'subscription']
+
+    def get_business(self, obj):
+        from bookkeeping.models import Business
+        from bookkeeping.serializers import BusinessSerializer
+        business = Business.objects.filter(user=obj).first()
+        if business:
+            return BusinessSerializer(business, context=self.context).data
+        return None
+
+    def get_subscription(self, obj):
+        subscription = getattr(obj, 'subscription', None)
+        if subscription:
+            return {
+                'plan': subscription.plan.name if subscription.plan else 'Free',
+                'status': subscription.status,
+                'is_pro': obj.is_pro,
+                'next_payment_date': subscription.next_payment_date
+            }
+        return {
+            'plan': 'Free',
+            'status': 'expired',
+            'is_pro': False,
+            'next_payment_date': None
+        }

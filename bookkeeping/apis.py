@@ -1,13 +1,13 @@
+import os
+from decimal import Decimal
 from urllib.parse import urlencode
-from rest_framework import viewsets, status
-from django.http import HttpResponse
+from rest_framework import status
 from django.conf import settings
-from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from django.db.models import Sum, Count, Q
 from datetime import datetime, date, timedelta
-from drf_spectacular.utils import extend_schema, extend_schema_view, OpenApiParameter, OpenApiExample
+from drf_spectacular.utils import extend_schema, OpenApiParameter
 from drf_spectacular.types import OpenApiTypes
 
 from reportlab.platypus import (
@@ -21,17 +21,17 @@ from reportlab.pdfbase.ttfonts import TTFont
 from django.http import FileResponse
 from io import BytesIO
 from datetime import datetime
-from rest_framework.generics import ListAPIView, CreateAPIView, RetrieveAPIView
+from rest_framework.generics import ListAPIView, CreateAPIView
 
 from .models import Business, Transaction, TransactionItem
 from .serializers import (
     BusinessSerializer, 
     TransactionSerializer, 
     TransactionListSerializer,
-    TransactionItemSerializer,
     TaxSummarySerializer
 )
-from .permissions import IsOwner, IsBusinessOwner
+from .permissions import IsOwner
+from account.permissions import IsProUser
 from .services.summaries import daily_summary, date_range_summary, profit_and_loss
 from .services.tax.nigeria_2026 import NigeriaTaxCalculator2026
 
@@ -372,443 +372,182 @@ class TransactionCreateView(generics.CreateAPIView):
 
 
 
+class TransactionPDFExportView(APIView):
+    """
+    Export filtered transactions as a detailed PDF report for the logged-in business owner.
+    Filters: type, start_date, end_date (YYYY-MM-DD)
+    """
+    permission_classes = [IsAuthenticated]
 
+    def get(self, request):
+        params = request.query_params
+        is_pro = request.user.is_pro
+        is_download_request = params.get('download', 'false').lower() == 'true'
 
-# @extend_schema_view(
-#     list=extend_schema(
-#         summary="List all businesses",
-#         description="Get a list of all businesses owned by the authenticated user.",
-#         tags=["Businesses"]
-#     ),
-#     create=extend_schema(
-#         summary="Create a business",
-#         description="Create a new business for the authenticated user. Each user can have multiple businesses.",
-#         tags=["Businesses"]
-#     ),
-#     retrieve=extend_schema(
-#         summary="Get business details",
-#         description="Retrieve details of a specific business.",
-#         tags=["Businesses"]
-#     ),
-#     update=extend_schema(
-#         summary="Update business",
-#         description="Update business information.",
-#         tags=["Businesses"]
-#     ),
-#     partial_update=extend_schema(
-#         summary="Partial update business",
-#         description="Partially update business information.",
-#         tags=["Businesses"]
-#     ),
-#     destroy=extend_schema(
-#         summary="Delete business",
-#         description="Delete a business.",
-#         tags=["Businesses"]
-#     ),
-# )
-# class BusinessViewSet(viewsets.ModelViewSet):
-#     """
-#     ViewSet for managing Business
-#     Users can only access their own business
-#     """
-#     serializer_class = BusinessSerializer
-#     permission_classes = [IsAuthenticated, IsBusinessOwner]
-
-#     def get_queryset(self):
-#         """
-#         Filter to only return businesses owned by the authenticated user
-#         """
-#         return Business.objects.filter(user=self.request.user)
-
-#     def perform_create(self, serializer):
-#         """
-#         Automatically set the user when creating a business
-#         """
-#         serializer.save(user=self.request.user)
-
-
-# @extend_schema_view(
-#     list=extend_schema(
-#         summary="List transactions",
-#         description="Get a paginated list of transactions with filtering options.",
-#         tags=["Transactions"],
-#         parameters=[
-#             OpenApiParameter(
-#                 name='type',
-#                 type=OpenApiTypes.STR,
-#                 enum=['income', 'expense'],
-#                 description='Filter by transaction type'
-#             ),
-#             OpenApiParameter(
-#                 name='start_date',
-#                 type=OpenApiTypes.DATE,
-#                 description='Filter transactions from this date (YYYY-MM-DD)'
-#             ),
-#             OpenApiParameter(
-#                 name='end_date',
-#                 type=OpenApiTypes.DATE,
-#                 description='Filter transactions until this date (YYYY-MM-DD)'
-#             ),
-#         ]
-#     ),
-#     create=extend_schema(
-#         summary="Create transaction",
-#         description="Create a new transaction with nested items. Total amount is calculated automatically from items.",
-#         tags=["Transactions"],
-#         examples=[
-#             OpenApiExample(
-#                 'Transaction Example',
-#                 value={
-#                     'transaction_type': 'expense',
-#                     'date': '2025-12-21',
-#                     'description': 'Office supplies',
-#                     'items': [
-#                         {
-#                             'description': 'Printer paper',
-#                             'amount': '25.50',
-#                             'category': 'supplies'
-#                         },
-#                         {
-#                             'description': 'Pens',
-#                             'amount': '15.00',
-#                             'category': 'supplies'
-#                         }
-#                     ]
-#                 },
-#                 request_only=True
-#             )
-#         ]
-#     ),
-#     retrieve=extend_schema(
-#         summary="Get transaction details",
-#         description="Retrieve a specific transaction with all its items.",
-#         tags=["Transactions"]
-#     ),
-#     update=extend_schema(
-#         summary="Update transaction",
-#         description="Update a transaction and its items. Total amount is recalculated automatically.",
-#         tags=["Transactions"]
-#     ),
-#     partial_update=extend_schema(
-#         summary="Partial update transaction",
-#         description="Partially update a transaction.",
-#         tags=["Transactions"]
-#     ),
-#     destroy=extend_schema(
-#         summary="Delete transaction (soft delete)",
-#         description="Soft delete a transaction. It will be marked as deleted but not removed from database.",
-#         tags=["Transactions"]
-#     ),
-# )
-# class TransactionViewSet(viewsets.ModelViewSet):
-#     """
-#     ViewSet for managing Transactions with nested items
-#     Supports CRUD operations with proper user scoping
-#     """
-#     permission_classes = [IsAuthenticated, IsOwner]
-
-#     def get_serializer_class(self):
-#         """
-#         Use different serializers for list and detail views
-#         """
-#         if self.action == 'list':
-#             return TransactionListSerializer
-#         return TransactionSerializer
-
-#     def get_queryset(self):
-#         """
-#         Filter transactions to only those owned by the authenticated user
-#         Exclude soft-deleted transactions by default
-#         Use select_related and prefetch_related for performance
-#         """
-#         queryset = Transaction.objects.filter(
-#             user=self.request.user,
-#             is_deleted=False
-#         ).select_related('business', 'user').prefetch_related('items')
-
-#         # Filter by transaction type if provided
-#         transaction_type = self.request.query_params.get('type', None)
-#         if transaction_type in ['income', 'expense']:
-#             queryset = queryset.filter(transaction_type=transaction_type)
-
-#         # Filter by date range
-#         start_date = self.request.query_params.get('start_date', None)
-#         end_date = self.request.query_params.get('end_date', None)
+        # Gate download for only pro users
+        if is_download_request and not is_pro:
+            return Response(
+                {"error": "Subscription required to download or share reports."},
+                status=status.HTTP_402_PAYMENT_REQUIRED
+            )
         
-#         if start_date:
-#             queryset = queryset.filter(date__gte=start_date)
-#         if end_date:
-#             queryset = queryset.filter(date__lte=end_date)
+        queryset = Transaction.objects.filter(
+            user=request.user,
+            is_deleted=False
+        ).select_related('business', 'user').prefetch_related('items')
 
-#         return queryset
+        # Filter by transaction type
+        tx_type = params.get('type')
+        if tx_type in ['income', 'expense']:
+            queryset = queryset.filter(transaction_type=tx_type)
 
-#     def perform_create(self, serializer):
-#         """
-#         Automatically set the user and business when creating a transaction
-#         """
-#         serializer.save()
-
-#     def perform_destroy(self, instance):
-#         """
-#         Soft delete - set is_deleted to True instead of actually deleting
-#         """
-#         instance.is_deleted = True
-#         instance.save()
-
-#     @extend_schema(
-#         summary="Get transaction summary",
-#         description="Get aggregated statistics including total income, expenses, and net amount.",
-#         tags=["Transactions"],
-#         responses={
-#             200: {
-#                 'type': 'object',
-#                 'properties': {
-#                     'income': {
-#                         'type': 'object',
-#                         'properties': {
-#                             'total': {'type': 'number'},
-#                             'count': {'type': 'integer'}
-#                         }
-#                     },
-#                     'expense': {
-#                         'type': 'object',
-#                         'properties': {
-#                             'total': {'type': 'number'},
-#                             'count': {'type': 'integer'}
-#                         }
-#                     },
-#                     'net': {'type': 'number'},
-#                     'total_transactions': {'type': 'integer'}
-#                 }
-#             }
-#         }
-#     )
-#     @action(detail=False, methods=['get'])
-#     def summary(self, request):
-#         """
-#         Get summary statistics for user's transactions
-#         """
-#         queryset = self.get_queryset()
+        # Filter by date range
+        start_date = params.get('start_date')
+        end_date = params.get('end_date')
         
-#         # Calculate totals
-#         income_total = queryset.filter(
-#             transaction_type='income'
-#         ).aggregate(total=Sum('total_amount'))['total'] or Decimal('0.00')
+        if start_date:
+            parsed_start = parse_date(start_date)
+            if parsed_start:
+                queryset = queryset.filter(date__gte=parsed_start)
         
-#         expense_total = queryset.filter(
-#             transaction_type='expense'
-#         ).aggregate(total=Sum('total_amount'))['total'] or Decimal('0.00')
+        if end_date:
+            parsed_end = parse_date(end_date)
+            if parsed_end:
+                queryset = queryset.filter(date__lte=parsed_end)
+
+        # PDF Generation
+        FONT_PATH = os.path.join(
+            settings.BASE_DIR,
+            'staticfiles',
+            "fonts",
+            "DejaVuSans.ttf"
+        )
         
-#         net_total = income_total - expense_total
-        
-#         # Count transactions
-#         income_count = queryset.filter(transaction_type='income').count()
-#         expense_count = queryset.filter(transaction_type='expense').count()
-        
-#         return Response({
-#             'income': {
-#                 'total': income_total,
-#                 'count': income_count,
-#             },
-#             'expense': {
-#                 'total': expense_total,
-#                 'count': expense_count,
-#             },
-#             'net': net_total,
-#             'total_transactions': income_count + expense_count,
-#         })
+        # Register Unicode font
+        try:
+            pdfmetrics.registerFont(TTFont('DejaVu', FONT_PATH))
+        except Exception:
+            # Font might be already registered
+            pass
 
-#     @extend_schema(
-#         summary="List deleted transactions",
-#         description="Get a list of soft-deleted transactions.",
-#         tags=["Transactions"]
-#     )
-#     @action(detail=False, methods=['get'])
-#     def deleted(self, request):
-#         """
-#         List soft-deleted transactions
-#         """
-#         deleted_transactions = Transaction.objects.filter(
-#             user=request.user,
-#             is_deleted=True
-#         ).select_related('business', 'user').prefetch_related('items')
-        
-#         serializer = self.get_serializer(deleted_transactions, many=True)
-#         return Response(serializer.data)
+        buffer = BytesIO()
+        doc = SimpleDocTemplate(
+            buffer,
+            pagesize=A4,
+            rightMargin=40,
+            leftMargin=40,
+            topMargin=40,
+            bottomMargin=40
+        )
 
-#     @extend_schema(
-#         summary="Restore deleted transaction",
-#         description="Restore a soft-deleted transaction back to active state.",
-#         tags=["Transactions"]
-#     )
-#     @action(detail=True, methods=['post'])
-#     def restore(self, request, pk=None):
-#         """
-#         Restore a soft-deleted transaction
-#         """
-#         transaction = self.get_object()
-        
-#         if not transaction.is_deleted:
-#             return Response(
-#                 {'error': 'Transaction is not deleted'},
-#                 status=status.HTTP_400_BAD_REQUEST
-#             )
-        
-#         transaction.is_deleted = False
-#         transaction.save()
-        
-#         serializer = self.get_serializer(transaction)
-#         return Response(serializer.data)
+        styles = getSampleStyleSheet()
+        styles["Normal"].fontName = "DejaVu"
+        styles["Heading1"].fontName = "DejaVu"
+        styles["Heading2"].fontName = "DejaVu"
 
-#     @action(detail=False, methods=['get'], url_path='export/pdf')
-#     def export_pdf(self, request):
-#         """
-#         Export filtered transactions as a detailed PDF report for the logged-in business owner.
-#         Filters: type, start_date, end_date, date (YYYY-MM-DD)
-#         """
-#         FONT_PATH = os.path.join(
-#             settings.BASE_DIR,
-#             'staticfiles',
-#             "fonts",
-#             "DejaVuSans.ttf"
-#         )
-#         # Register Unicode font
-#         pdfmetrics.registerFont(TTFont('DejaVu', FONT_PATH))
-#         queryset = self.get_queryset()
+        elements = []
 
-#         buffer = BytesIO()
-#         doc = SimpleDocTemplate(
-#             buffer,
-#             pagesize=A4,
-#             rightMargin=40,
-#             leftMargin=40,
-#             topMargin=40,
-#             bottomMargin=40
-#         )
+        # Title
+        elements.append(Paragraph("<b>Dally Bookkeeping Report</b>", styles["Heading1"]))
+        elements.append(Spacer(1, 10))
 
-#         styles = getSampleStyleSheet()
-#         styles["Normal"].fontName = "DejaVu"
-#         styles["Heading1"].fontName = "DejaVu"
-#         styles["Heading2"].fontName = "DejaVu"
+        elements.append(Paragraph(
+            f"User: {request.user.email}<br/>"
+            f"Exported: {datetime.now().strftime('%Y-%m-%d %H:%M')}",
+            styles["Normal"]
+        ))
+        elements.append(Spacer(1, 20))
 
-#         elements = []
+        # ================= SUMMARY TABLE =================
+        income_agg = queryset.filter(transaction_type='income').aggregate(
+            total=Sum('total_amount')
+        )
+        income = income_agg['total'] or Decimal('0.00')
 
-#         # Title
-#         elements.append(Paragraph("<b>Dally Bookkeeping Report</b>", styles["Heading1"]))
-#         elements.append(Spacer(1, 10))
+        expense_agg = queryset.filter(transaction_type='expense').aggregate(
+            total=Sum('total_amount')
+        )
+        expense = expense_agg['total'] or Decimal('0.00')
 
-#         elements.append(Paragraph(
-#             f"User: {request.user.email}<br/>"
-#             f"Exported: {datetime.now().strftime('%Y-%m-%d %H:%M')}",
-#             styles["Normal"]
-#         ))
-#         elements.append(Spacer(1, 20))
+        net = income - expense
 
-#         # ================= SUMMARY TABLE =================
-#         income = queryset.filter(transaction_type='income').aggregate(
-#             total=Sum('total_amount')
-#         )['total'] or 0
+        summary_data = [
+            ["Metric", "Amount (₦)"],
+            ["Total Income", f"{income:,.2f}"],
+            ["Total Expense", f"{expense:,.2f}"],
+            ["Net", f"{net:,.2f}"],
+        ]
 
-#         expense = queryset.filter(transaction_type='expense').aggregate(
-#             total=Sum('total_amount')
-#         )['total'] or 0
+        summary_table = Table(summary_data, colWidths=[200, 200])
+        summary_table.setStyle(TableStyle([
+            ("BACKGROUND", (0, 0), (-1, 0), colors.lightgrey),
+            ("GRID", (0, 0), (-1, -1), 1, colors.grey),
+            ("FONTNAME", (0, 0), (-1, -1), "DejaVu"),
+            ("ALIGN", (1, 1), (-1, -1), "RIGHT"),
+        ]))
 
-#         net = income - expense
+        elements.append(Paragraph("<b>Summary</b>", styles["Heading2"]))
+        elements.append(summary_table)
+        elements.append(Spacer(1, 20))
 
-#         summary_data = [
-#             ["Metric", "Amount (₦)"],
-#             ["Total Income", f"{income:,.2f}"],
-#             ["Total Expense", f"{expense:,.2f}"],
-#             ["Net", f"{net:,.2f}"],
-#         ]
+        # ================= TRANSACTIONS =================
+        elements.append(Paragraph("<b>Detailed Transactions</b>", styles["Heading2"]))
+        elements.append(Spacer(1, 10))
 
-#         summary_table = Table(summary_data, colWidths=[200, 200])
-#         summary_table.setStyle(TableStyle([
-#             ("BACKGROUND", (0, 0), (-1, 0), colors.lightgrey),
-#             ("GRID", (0, 0), (-1, -1), 1, colors.grey),
-#             ("FONTNAME", (0, 0), (-1, -1), "DejaVu"),
-#             ("ALIGN", (1, 1), (-1, -1), "RIGHT"),
-#         ]))
+        tx_table_data = [
+            ["Date", "Type", "Description", "Amount (₦)"]
+        ]
 
-#         elements.append(Paragraph("<b>Summary</b>", styles["Heading2"]))
-#         elements.append(summary_table)
-#         elements.append(Spacer(1, 20))
+        for tx in queryset.order_by("-date"):
+            tx_table_data.append([
+                tx.date.strftime("%Y-%m-%d"),
+                tx.get_transaction_type_display(),
+                tx.description,
+                f"{tx.total_amount:,.2f}"
+            ])
 
-#         # ================= TRANSACTIONS =================
-#         elements.append(Paragraph("<b>Detailed Transactions</b>", styles["Heading2"]))
-#         elements.append(Spacer(1, 10))
+            # Items (indented rows)
+            for item in tx.items.all():
+                tx_table_data.append([
+                    "",
+                    "↳ Item",
+                    f"{item.description} ({item.category or '-'})",
+                    f"{item.amount:,.2f}"
+                ])
 
-#         tx_table_data = [
-#             ["Date", "Type", "Description", "Amount (₦)"]
-#         ]
+        tx_table = Table(tx_table_data, colWidths=[70, 70, 230, 90])
+        tx_table.setStyle(TableStyle([
+            ("BACKGROUND", (0, 0), (-1, 0), colors.lightgrey),
+            ("GRID", (0, 0), (-1, -1), 0.5, colors.grey),
+            ("FONTNAME", (0, 0), (-1, -1), "DejaVu"),
+            ("ALIGN", (3, 1), (-1, -1), "RIGHT"),
+            ("VALIGN", (0, 0), (-1, -1), "TOP"),
+        ]))
 
-#         for tx in queryset.order_by("-date"):
-#             tx_table_data.append([
-#                 tx.date.strftime("%Y-%m-%d"),
-#                 tx.get_transaction_type_display(),
-#                 tx.description,
-#                 f"{tx.total_amount:,.2f}"
-#             ])
+        elements.append(tx_table)
 
-#             # Items (indented rows)
-#             for item in tx.items.all():
-#                 tx_table_data.append([
-#                     "",
-#                     "↳ Item",
-#                     f"{item.description} ({item.category or '-'})",
-#                     f"{item.amount:,.2f}"
-#                 ])
+        # Background Watermark for free users
+        def add_watermark(canvas, doc):
+            if not is_pro:
+                canvas.saveState()
+                canvas.setFont('DejaVu', 60)
+                canvas.setStrokeColor(colors.lightgrey)
+                canvas.setFillColor(colors.lightgrey, alpha=0.3)
+                # Rotate and draw watermark
+                canvas.translate(A4[0]/2, A4[1]/2)
+                canvas.rotate(45)
+                canvas.drawCentredString(0, 0, "PREVIEW - UPGRADE TO PRO")
+                canvas.setFont('DejaVu', 20)
+                canvas.drawCentredString(0, -60, "NO DOWNLOAD/SHARING ALLOWED")
+                canvas.restoreState()
 
-#         tx_table = Table(tx_table_data, colWidths=[70, 70, 230, 90])
-#         tx_table.setStyle(TableStyle([
-#             ("BACKGROUND", (0, 0), (-1, 0), colors.lightgrey),
-#             ("GRID", (0, 0), (-1, -1), 0.5, colors.grey),
-#             ("FONTNAME", (0, 0), (-1, -1), "DejaVu"),
-#             ("ALIGN", (3, 1), (-1, -1), "RIGHT"),
-#             ("VALIGN", (0, 0), (-1, -1), "TOP"),
-#         ]))
+        # Build PDF
+        doc.build(elements, onFirstPage=add_watermark, onLaterPages=add_watermark)
+        buffer.seek(0)
 
-#         elements.append(tx_table)
-
-#         # Build PDF
-#         doc.build(elements)
-#         buffer.seek(0)
-
-#         return FileResponse(
-#             buffer,
-#             as_attachment=True,
-#             filename="dally_report.pdf",
-#             content_type="application/pdf"
-#         )
-
-
-
-# @extend_schema_view(
-#     list=extend_schema(
-#         summary="List transaction items",
-#         description="Get a list of all transaction items for the authenticated user.",
-#         tags=["Transaction Items"]
-#     ),
-#     retrieve=extend_schema(
-#         summary="Get transaction item details",
-#         description="Retrieve details of a specific transaction item.",
-#         tags=["Transaction Items"]
-#     ),
-# )
-# class TransactionItemViewSet(viewsets.ReadOnlyModelViewSet):
-#     """
-#     ReadOnly ViewSet for TransactionItems
-#     Items should be managed through the Transaction endpoint
-#     This is mainly for querying/viewing items
-#     """
-#     serializer_class = TransactionItemSerializer
-#     permission_classes = [IsAuthenticated, IsOwner]
-
-#     def get_queryset(self):
-#         """
-#         Filter items to only those belonging to user's transactions
-#         """
-#         return TransactionItem.objects.filter(
-#             transaction__user=self.request.user
-#         ).select_related('transaction')
-
+        return FileResponse(
+            buffer,
+            as_attachment=True,
+            filename=f"dally_report_{datetime.now().strftime('%Y%m%d')}.pdf",
+            content_type="application/pdf"
+        )

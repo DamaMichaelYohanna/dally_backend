@@ -38,8 +38,59 @@ class User(AbstractUser):
 
     objects = UserManager()
 
+    @property
+    def is_pro(self):
+        """
+        Check if user has an active pro subscription
+        """
+        subscription = getattr(self, 'subscription', None)
+        if subscription and subscription.status == 'active':
+            return True
+        return False
+
     def __str__(self):
         return self.email
+
+
+class SubscriptionPlan(models.Model):
+    name = models.CharField(max_length=100)
+    paystack_plan_id = models.CharField(max_length=100, unique=True)
+    amount = models.DecimalField(max_digits=12, decimal_digits=2)
+    interval = models.CharField(max_length=20, choices=[
+        ('hourly', 'Hourly'),
+        ('daily', 'Daily'),
+        ('weekly', 'Weekly'),
+        ('monthly', 'Monthly'),
+        ('annually', 'Annually'),
+    ])
+    description = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.name} ({self.interval})"
+
+
+class Subscription(models.Model):
+    STATUS_CHOICES = [
+        ('active', 'Active'),
+        ('non-renewing', 'Non-Renewing'),
+        ('attention', 'Attention'),
+        ('completed', 'Completed'),
+        ('cancelled', 'Cancelled'),
+        ('expired', 'Expired'),
+    ]
+
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='subscription')
+    plan = models.ForeignKey(SubscriptionPlan, on_delete=models.SET_NULL, null=True, blank=True)
+    paystack_subscription_id = models.CharField(max_length=100, blank=True, null=True)
+    paystack_email_token = models.CharField(max_length=255, blank=True, null=True)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='expired')
+    next_payment_date = models.DateTimeField(blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.user.email} - {self.status}"
 
 
 class PasswordResetOTP(models.Model):

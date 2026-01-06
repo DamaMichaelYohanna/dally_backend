@@ -19,9 +19,20 @@ from drf_spectacular.utils import extend_schema, OpenApiExample
 
 from account.utils import OTPVerifyThrottle, create_or_replace_otp
 
-from .serializers import ChangePasswordSerializer, PasswordOTPVerifySerializer, UserRegistrationSerializer, PasswordResetRequestSerializer, PasswordResetSerializer
+from .serializers import (
+    ChangePasswordSerializer, 
+    PasswordOTPVerifySerializer, 
+    UserRegistrationSerializer, 
+    PasswordResetRequestSerializer, 
+    PasswordResetSerializer,
+    UserProfileSerializer
+)
 from bookkeeping.models import Business
-from account.models import PasswordResetOTP, User
+from account.models import PasswordResetOTP, User, Subscription, SubscriptionPlan
+from .services.paystack import PaystackService
+import hmac
+import hashlib
+import json
 
 # prepare logging handler for this file
 logger = logging.getLogger(__name__)
@@ -495,4 +506,153 @@ def password_reset_verify(request, uid, token):
             'valid': False,
             'message': 'Invalid reset link.'
         }, status=status.HTTP_400_BAD_REQUEST)
+
+
+@extend_schema(
+    summary="Get subscription status",
+    description="Get the current subscription status for the authenticated user.",
+    tags=["subscription"],
+    responses={200: {'type': 'object'}}
+)
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def subscription_status(request):
+    subscription = getattr(request.user, 'subscription', None)
+    if not subscription:
+        return Response({
+            'is_pro': False,
+            'status': 'expired',
+            'plan': None
+        })
+    
+    return Response({
+        'is_pro': request.user.is_pro,
+        'status': subscription.status,
+        'plan': subscription.plan.name if subscription.plan else None,
+        'next_payment_date': subscription.next_payment_date
+    })
+
+
+@extend_schema(
+    summary="Initialize subscription",
+    description="Initialize a new subscription using Paystack.",
+    tags=["subscription"],
+    request={'type': 'object', 'properties': {'plan_id': {'type': 'string'}}},
+    responses={200: {'type': 'object'}}
+)
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def initialize_subscription(request):
+    plan_id = request.data.get('plan_id')
+    if not plan_id:
+        return Response({"error": "plan_id is required"}, status=status.HTTP_400_BAD_REQUEST)
+    
+    try:
+        plan = SubscriptionPlan.objects.get(paystack_plan_id=plan_id)
+    except SubscriptionPlan.DoesNotExist:
+        return Response({"error": "Invalid plan_id"}, status=status.HTTP_400_BAD_REQUEST)
+
+    # Initialize Paystack transaction
+    response = PaystackService.initialize_transaction(
+        email=request.user.email,
+        amount=plan.amount,
+        plan_id=plan_id
+    )
+    
+    if response.get('status'):
+        return Response(response['data'])
+    
+    return Response({"error": "Could not initialize subscription"}, status=status.HTTP_400_BAD_REQUEST)
+
+
+@extend_schema(
+    summary="Paystack Webhook",
+    description="Handle incoming webhooks from Paystack.",
+    tags=["webhooks"],
+    responses={200: {'description': 'Webhook received'}}
+)
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def paystack_webhook(request):
+    payload = request.body
+    signature = request.headers.get('x-paystack-signature')
+    
+    if not signature:
+        return Response(status=status.HTTP_401_UNAUTHORIZED)
+
+    # Verify signature
+    computed_signature = hmac.new(
+        settings.PAYSTACK_SECRET_KEY.encode('utf-8'),
+        payload,
+        hashlib.sha512
+    ).hexdigest()
+    
+    if computed_signature != signature:
+        return Response(status=status.HTTP_401_UNAUTHORIZED)
+
+    event_data = json.loads(payload)
+    event_type = event_data.get('event')
+    
+    # Process events
+    if event_type == 'subscription.create':
+        data = event_data['data']
+        email = data['customer']['email']
+        try:
+            user = User.objects.get(email=email)
+            plan_code = data['plan']['plan_code']
+            plan = SubscriptionPlan.objects.get(paystack_plan_id=plan_code)
+            
+            subscription, created = Subscription.objects.get_or_create(user=user)
+            subscription.plan = plan
+            subscription.paystack_subscription_id = data['subscription_code']
+            subscription.paystack_email_token = data['email_token']
+            subscription.status = 'active'
+            subscription.next_payment_date = data['next_payment_date']
+            subscription.save()
+            
+            logger.info(f"Subscription created for {user.email}")
+        except (User.DoesNotExist, SubscriptionPlan.DoesNotExist):
+            pass
+
+    elif event_type in ['subscription.disable', 'subscription.not_renewing']:
+        data = event_data['data']
+        sub_code = data['subscription_code']
+        try:
+            subscription = Subscription.objects.get(paystack_subscription_id=sub_code)
+            subscription.status = 'cancelled' if event_type == 'subscription.disable' else 'non-renewing'
+            subscription.save()
+        except Subscription.DoesNotExist:
+            pass
+            
+    # Handle direct payment success (charge.success) for non-plan payments or renewals
+    elif event_type == 'charge.success':
+        data = event_data['data']
+        if data.get('plan'): # If it's a plan payment
+            email = data['customer']['email']
+            try:
+                user = User.objects.get(email=email)
+                plan_code = data['plan']['plan_code']
+                plan = SubscriptionPlan.objects.get(paystack_plan_id=plan_code)
+                
+                subscription, created = Subscription.objects.get_or_create(user=user)
+                subscription.plan = plan
+                subscription.status = 'active'
+                subscription.save()
+            except (User.DoesNotExist, SubscriptionPlan.DoesNotExist):
+                pass
+
+    return Response(status=status.HTTP_200_OK)
+
+
+@extend_schema(
+    summary="Get user profile",
+    description="Get comprehensive user profile including business and subscription details.",
+    tags=["auth"],
+    responses={200: UserProfileSerializer}
+)
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def profile_view(request):
+    serializer = UserProfileSerializer(request.user, context={'request': request})
+    return Response(serializer.data)
 
