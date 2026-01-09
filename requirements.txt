@@ -10,3 +10,4 @@ dj-database-url
 reportlab
 requests
 PyJWT
+resend==0.7.0
