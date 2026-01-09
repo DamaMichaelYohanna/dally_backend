@@ -135,10 +135,6 @@ USE_TZ = True
 STATIC_URL = '/static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 
-# Media files (user uploads, images)
-MEDIA_URL = '/media/'
-MEDIA_ROOT = BASE_DIR / 'mediafiles'
-
 # WhiteNoise configuration for production static files
 STORAGES = {
     "default": {
@@ -211,3 +207,8 @@ AUTH_USER_MODEL = 'account.User'
 
 INTERNAL_JWT_SECRET = config('INTERNAL_JWT_SECRET', default='change_this_in_production')
 PAYSTACK_SECRET_KEY = config('PAYSTACK_SECRET_KEY', default='')
+
+# CSRF trusted origins for production (Railway, custom domains)
+CSRF_TRUSTED_ORIGINS = [
+    'https://dally.up.railway.app',
+]
