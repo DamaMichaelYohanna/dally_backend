@@ -4,7 +4,9 @@ from django.contrib.auth.tokens import default_token_generator
 from django.utils.http import urlsafe_base64_decode
 from django.utils.timezone import now
 from django.utils.encoding import force_str
-from django.core.mail import send_mail
+import resend
+import os
+from django.conf import settings
 from django.conf import settings
 from django.db import transaction
 
@@ -136,25 +138,23 @@ def register(request):
                 
                 # Send welcome email (optional)
                 try:
-                    send_mail(
-                        subject='Welcome to Dally Bookkeeping!',
-                        message=f'''Hello {user.first_name or 'there'},
-                        Welcome to Dally Bookkeeping! Your account has been successfully created.
-                        Business: {business.name}
-                        Email: {user.email}
-                        
-                        You can now log in using your email address and start managing your bookkeeping records.
-                        
-                        Best regards,
-                        Dally Bookkeeping Team
-                                ''',
-                        from_email=settings.DEFAULT_FROM_EMAIL,
-                        recipient_list=[user.email],
-                        fail_silently=True,
-                    )
-                    logger.info(f"Email send to {user.email} successfully!")
+                    resend.api_key = os.environ.get('RESEND_API_KEY', getattr(settings, 'RESEND_API_KEY', None))
+                    resend.Emails.send({
+                        "from": "onboarding@resend.dev",
+                        "to": user.email,
+                        "subject": "Welcome to Dally Bookkeeping!",
+                        "html": f"""
+                            <p>Hello {user.first_name or 'there'},</p>
+                            <p>Welcome to Dally Bookkeeping! Your account has been successfully created.</p>
+                            <p><b>Business:</b> {business.name}<br/>
+                            <b>Email:</b> {user.email}</p>
+                            <p>You can now log in using your email address and start managing your bookkeeping records.</p>
+                            <p>Best regards,<br/>Dally Bookkeeping Team</p>
+                        """
+                    })
+                    logger.info(f"Resend: Email sent to {user.email} successfully!")
                 except Exception as e:
-                    logger.warning(f"Sending email failed for {user.email}")
+                    logger.warning(f"Resend: Sending email failed for {user.email}: {e}")
                 
                 logger.info(f"Account for {user.email} has been created successfully")
                 return Response({
@@ -231,31 +231,25 @@ def password_reset_request(request):
             otp = create_or_replace_otp(user)
             # Send password reset email
             try:
-                send_mail(
-                    subject='Password Reset Request - Dally Bookkeeping',
-                    message=f'''Hello {user.username},
-                    
-You have requested to reset your password for your Dally Bookkeeping account.
-
-Here is your six (6) digit pin
-
-{otp}
-
-This pin will expire in 10 mins.
-
-If you did not request this password reset, please ignore this email.
-
-Best regards,
-Dally Bookkeeping Team
-                    ''',
-                    from_email=settings.DEFAULT_FROM_EMAIL,
-                    recipient_list=[email],
-                    fail_silently=False,
-                )
+                resend.api_key = os.environ.get('RESEND_API_KEY', getattr(settings, 'RESEND_API_KEY', None))
+                resend.Emails.send({
+                    "from": "onboarding@resend.dev",
+                    "to": email,
+                    "subject": "Password Reset Request - Dally Bookkeeping",
+                    "html": f"""
+                        <p>Hello {user.username},</p>
+                        <p>You have requested to reset your password for your Dally Bookkeeping account.</p>
+                        <p><b>Here is your six (6) digit pin:</b></p>
+                        <h2>{otp}</h2>
+                        <p>This pin will expire in 10 mins.</p>
+                        <p>If you did not request this password reset, please ignore this email.</p>
+                        <p>Best regards,<br/>Dally Bookkeeping Team</p>
+                    """
+                })
                 email_sent = True
-                logger.info(f"Reset password pin sent to {email}")
+                logger.info(f"Resend: Reset password pin sent to {email}")
             except Exception as e:
-                logger.error(f"Could not send email: {e}")
+                logger.error(f"Resend: Could not send email: {e}")
                 email_sent = False
             
             # For development/testing, also return the reset link

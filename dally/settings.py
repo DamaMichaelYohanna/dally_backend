@@ -46,6 +46,7 @@ INSTALLED_APPS = [
     'account.apps.AccountConfig',
     'bookkeeping.apps.BookkeepingConfig',
     'main.apps.MainConfig',
+    'admin_dashboard.apps.AdminDashboardConfig',
 ]
 
 MIDDLEWARE = [
@@ -134,6 +135,10 @@ USE_TZ = True
 STATIC_URL = '/static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 
+# Media files (user uploads, images)
+MEDIA_URL = '/media/'
+MEDIA_ROOT = BASE_DIR / 'mediafiles'
+
 # WhiteNoise configuration for production static files
 STORAGES = {
     "default": {
@@ -188,6 +193,7 @@ SPECTACULAR_SETTINGS = {
     },
 }
 
+
 # Email Configuration for Gmail
 EMAIL_BACKEND = config('EMAIL_BACKEND', default='django.core.mail.backends.smtp.EmailBackend')
 EMAIL_HOST = 'smtp.gmail.com'
@@ -196,6 +202,9 @@ EMAIL_USE_TLS = True
 EMAIL_HOST_USER = config('EMAIL_HOST_USER', default='')
 EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD', default='')
 DEFAULT_FROM_EMAIL = config('DEFAULT_FROM_EMAIL', default=EMAIL_HOST_USER)
+
+# Resend API Key
+RESEND_API_KEY = config('RESEND_API_KEY', default='')
 
 
 AUTH_USER_MODEL = 'account.User'

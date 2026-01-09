@@ -55,3 +55,7 @@ def waitlist_signup(request):
         )
         return render(request, 'main/home.html', {'form': form})
 
+
+def custom_404(request, exception):
+    return render(request, 'main/404.html', status=404)
+

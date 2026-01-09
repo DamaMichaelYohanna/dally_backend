@@ -1,0 +1,459 @@
+{% extends 'main/base.html' %}
+{% load static %}
+
+{% block title %}Admin Dashboard{% endblock %}
+
+{% block content %}
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+  
+  * {
+    font-family: 'Inter', sans-serif;
+  }
+  
+  .dashboard-wrapper {
+    background: linear-gradient(135deg, #f5f7fa 0%, #e4e8ec 100%);
+    min-height: 100vh;
+    padding: 2rem 1rem;
+  }
+  
+  @media (min-width: 768px) {
+    .dashboard-wrapper {
+      padding: 3rem 2rem;
+    }
+  }
+  
+  .premium-card {
+    background: rgba(255, 255, 255, 0.98);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.8);
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06);
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  
+  .premium-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.12);
+  }
+  
+  .metric-card-wrapper {
+    position: relative;
+    overflow: hidden;
+  }
+  
+  .metric-card-wrapper::after {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle, rgba(255,255,255,0.8) 0%, transparent 70%);
+    opacity: 0;
+    transition: opacity 0.5s;
+  }
+  
+  .metric-card-wrapper:hover::after {
+    opacity: 1;
+  }
+  
+  .gradient-header {
+    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #d946ef 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  
+  .icon-wrapper {
+    position: relative;
+  }
+  
+  .icon-wrapper::before {
+    content: '';
+    position: absolute;
+    inset: -4px;
+    border-radius: 0.75rem;
+    background: linear-gradient(135deg, currentColor, transparent);
+    opacity: 0.1;
+    z-index: -1;
+  }
+  
+  .pulse-indicator {
+    animation: pulse-ring 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+  
+  @keyframes pulse-ring {
+    0%, 100% {
+      opacity: 1;
+      transform: scale(1);
+    }
+    50% {
+      opacity: 0.5;
+      transform: scale(1.1);
+    }
+  }
+  
+  .revenue-card {
+    position: relative;
+    overflow: hidden;
+  }
+  
+  .revenue-card::before {
+    content: '';
+    position: absolute;
+    top: -100%;
+    left: -100%;
+    width: 300%;
+    height: 300%;
+    background: radial-gradient(circle, rgba(255,255,255,0.15) 0%, transparent 60%);
+  }
+  
+  .stats-appear {
+    animation: slideUp 0.6s ease-out forwards;
+    opacity: 0;
+  }
+  
+  @keyframes slideUp {
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+  }
+  
+  .table-row:hover {
+    background: linear-gradient(90deg, rgba(99, 102, 241, 0.03) 0%, rgba(139, 92, 246, 0.03) 100%);
+  }
+  
+  .avatar-circle {
+    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+  }
+  
+  .chart-wrapper {
+    height: 280px;
+    position: relative;
+  }
+</style>
+
+<div class="dashboard-wrapper">
+  <div class="max-w-7xl mx-auto">
+    
+    <!-- Elegant Header -->
+    <div class="premium-card rounded-3xl p-6 md:p-8 mb-8">
+      <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+        <div class="flex-1">
+          <div class="flex items-center gap-3 mb-3">
+            <h1 class="text-3xl md:text-5xl font-black gradient-header">Analytics Dashboard</h1>
+            <span class="pulse-indicator w-2.5 h-2.5 bg-emerald-500 rounded-full"></span>
+          </div>
+          <p class="text-gray-600 text-base md:text-lg font-medium">Monitor your growth in real-time</p>
+        </div>
+        <div class="flex items-center gap-3">
+          <div class="px-5 py-2.5 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-full text-sm font-semibold shadow-lg">
+            Admin
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- KPI Cards -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-8">
+      
+      <!-- Total Users -->
+      <div class="metric-card-wrapper premium-card rounded-2xl p-6">
+        <div class="flex items-start justify-between mb-5">
+          <div class="icon-wrapper p-3.5 bg-blue-500 text-white rounded-xl">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/>
+            </svg>
+          </div>
+        </div>
+        <div>
+          <p class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-1">Total Users</p>
+          <p class="text-4xl font-black text-gray-900 stats-appear">{{ total_users }}</p>
+        </div>
+      </div>
+
+      <!-- Active Users -->
+      <div class="metric-card-wrapper premium-card rounded-2xl p-6">
+        <div class="flex items-start justify-between mb-5">
+          <div class="icon-wrapper p-3.5 bg-emerald-500 text-white rounded-xl">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
+          </div>
+        </div>
+        <div>
+          <p class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-1">Active (30d)</p>
+          <p class="text-4xl font-black text-gray-900 stats-appear">{{ active_users }}</p>
+        </div>
+      </div>
+
+      <!-- Total Businesses -->
+      <div class="metric-card-wrapper premium-card rounded-2xl p-6">
+        <div class="flex items-start justify-between mb-5">
+          <div class="icon-wrapper p-3.5 bg-purple-500 text-white rounded-xl">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
+            </svg>
+          </div>
+        </div>
+        <div>
+          <p class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-1">Businesses</p>
+          <p class="text-4xl font-black text-gray-900 stats-appear">{{ total_businesses }}</p>
+        </div>
+      </div>
+
+      <!-- Total Transactions -->
+      <div class="metric-card-wrapper premium-card rounded-2xl p-6">
+        <div class="flex items-start justify-between mb-5">
+          <div class="icon-wrapper p-3.5 bg-pink-500 text-white rounded-xl">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/>
+            </svg>
+          </div>
+        </div>
+        <div>
+          <p class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-1">Transactions</p>
+          <p class="text-4xl font-black text-gray-900 stats-appear">{{ total_transactions }}</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Revenue Highlights -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+      
+      <!-- Total Revenue -->
+      <div class="revenue-card premium-card rounded-2xl p-8 bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-500 text-white">
+        <div class="relative z-10">
+          <div class="flex items-center gap-2 mb-4">
+            <svg class="w-5 h-5 opacity-90" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
+            <span class="text-sm font-bold uppercase tracking-wider opacity-90">Total Revenue</span>
+          </div>
+          <p class="text-5xl md:text-6xl font-black mb-1">₦{{ total_revenue|floatformat:2 }}</p>
+        </div>
+      </div>
+
+      <!-- Today's Transactions -->
+      <div class="revenue-card premium-card rounded-2xl p-8 bg-gradient-to-br from-amber-500 via-orange-500 to-red-500 text-white">
+        <div class="relative z-10">
+          <div class="flex items-center gap-2 mb-4">
+            <svg class="w-5 h-5 opacity-90" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/>
+            </svg>
+            <span class="text-sm font-bold uppercase tracking-wider opacity-90">Today</span>
+          </div>
+          <p class="text-5xl md:text-6xl font-black mb-1">{{ transactions_today }}</p>
+          <p class="text-sm opacity-80 font-medium">transactions</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Charts Section -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+      
+      <!-- Signups Chart -->
+      <div class="premium-card rounded-2xl p-6">
+        <h3 class="text-lg font-bold text-gray-900 mb-5">Signup Trend</h3>
+        <div class="chart-wrapper">
+          <canvas id="signupsChart"></canvas>
+        </div>
+      </div>
+
+      <!-- Transactions Chart -->
+      <div class="premium-card rounded-2xl p-6">
+        <h3 class="text-lg font-bold text-gray-900 mb-5">Daily Activity</h3>
+        <div class="chart-wrapper">
+          <canvas id="transactionsChart"></canvas>
+        </div>
+      </div>
+
+      <!-- Distribution Chart -->
+      <div class="premium-card rounded-2xl p-6">
+        <h3 class="text-lg font-bold text-gray-900 mb-5">User Types</h3>
+        <div class="chart-wrapper">
+          <canvas id="userDistChart"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- Data Tables -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      
+      <!-- Recent Users Table -->
+      <div class="premium-card rounded-2xl p-6">
+        <h3 class="text-lg font-bold text-gray-900 mb-5">Recent Users</h3>
+        <div class="overflow-x-auto -mx-6 px-6">
+          <table class="w-full">
+            <thead>
+              <tr class="border-b-2 border-gray-100">
+                <th class="text-left pb-3 px-3 text-xs font-bold text-gray-500 uppercase tracking-wider">User</th>
+                <th class="text-left pb-3 px-3 text-xs font-bold text-gray-500 uppercase tracking-wider">Joined</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-50">
+              {% for user in recent_users %}
+              <tr class="table-row transition-colors duration-200">
+                <td class="py-4 px-3">
+                  <div class="flex items-center gap-3">
+                    <div class="avatar-circle w-10 h-10 rounded-full flex items-center justify-center text-white text-xs font-bold shadow-sm">
+                      {{ user.email.0|upper }}{{ user.email.1|upper }}
+                    </div>
+                    <span class="font-semibold text-gray-900 text-sm">{{ user.email }}</span>
+                  </div>
+                </td>
+                <td class="py-4 px-3 text-gray-600 text-sm font-medium">{{ user.date_joined|date:'M d, H:i' }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Recent Transactions Table -->
+      <div class="premium-card rounded-2xl p-6">
+        <h3 class="text-lg font-bold text-gray-900 mb-5">Recent Transactions</h3>
+        <div class="overflow-x-auto -mx-6 px-6">
+          <table class="w-full">
+            <thead>
+              <tr class="border-b-2 border-gray-100">
+                <th class="text-left pb-3 px-3 text-xs font-bold text-gray-500 uppercase tracking-wider">Business</th>
+                <th class="text-left pb-3 px-3 text-xs font-bold text-gray-500 uppercase tracking-wider">Amount</th>
+                <th class="text-left pb-3 px-3 text-xs font-bold text-gray-500 uppercase tracking-wider">Time</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-50">
+              {% for tx in recent_transactions %}
+              <tr class="table-row transition-colors duration-200">
+                <td class="py-4 px-3 font-semibold text-gray-900 text-sm">{{ tx.business__name }}</td>
+                <td class="py-4 px-3 font-bold text-emerald-600 text-sm">₦{{ tx.total_amount|floatformat:2 }}</td>
+                <td class="py-4 px-3 text-gray-600 text-sm font-medium">{{ tx.created_at|date:'M d, H:i' }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', async () => {
+  const res = await fetch('{% url "admin_dashboard:metrics_json" %}');
+  const data = await res.json();
+
+  const chartDefaults = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: { display: false }
+    }
+  };
+
+  // Signups Line Chart
+  const signupsLabels = data.signups_daily.map(x => x.day);
+  const signupsData = data.signups_daily.map(x => x.count);
+  
+  new Chart(document.getElementById('signupsChart'), {
+    type: 'line',
+    data: {
+      labels: signupsLabels.reverse(),
+      datasets: [{
+        data: signupsData.reverse(),
+        borderColor: '#6366f1',
+        backgroundColor: 'rgba(99, 102, 241, 0.08)',
+        borderWidth: 3,
+        fill: true,
+        tension: 0.4,
+        pointBackgroundColor: '#6366f1',
+        pointBorderColor: '#fff',
+        pointBorderWidth: 3,
+        pointRadius: 4,
+        pointHoverRadius: 6,
+      }]
+    },
+    options: {
+      ...chartDefaults,
+      scales: {
+        y: {
+          beginAtZero: true,
+          grid: { color: 'rgba(0, 0, 0, 0.04)', drawBorder: false },
+          ticks: { font: { size: 11, weight: '600' }, color: '#9ca3af' }
+        },
+        x: {
+          grid: { display: false, drawBorder: false },
+          ticks: { font: { size: 11, weight: '600' }, color: '#9ca3af' }
+        }
+      }
+    }
+  });
+
+  // Transactions Bar Chart
+  new Chart(document.getElementById('transactionsChart'), {
+    type: 'bar',
+    data: {
+      labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+      datasets: [{
+        data: [12, 19, 3, 5, 2, 3, 7],
+        backgroundColor: '#f59e0b',
+        borderRadius: 6,
+        borderSkipped: false,
+      }]
+    },
+    options: {
+      ...chartDefaults,
+      scales: {
+        y: {
+          beginAtZero: true,
+          grid: { color: 'rgba(0, 0, 0, 0.04)', drawBorder: false },
+          ticks: { font: { size: 11, weight: '600' }, color: '#9ca3af' }
+        },
+        x: {
+          grid: { display: false, drawBorder: false },
+          ticks: { font: { size: 11, weight: '600' }, color: '#9ca3af' }
+        }
+      }
+    }
+  });
+
+  // User Distribution Doughnut
+  new Chart(document.getElementById('userDistChart'), {
+    type: 'doughnut',
+    data: {
+      labels: ['Free', 'Paid'],
+      datasets: [{
+        data: [data.subscription_breakdown.free, data.subscription_breakdown.paid],
+        backgroundColor: ['#6366f1', '#10b981'],
+        borderWidth: 0,
+        hoverOffset: 8
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          position: 'bottom',
+          labels: {
+            padding: 16,
+            font: { size: 12, weight: '700' },
+            color: '#374151',
+            usePointStyle: true,
+            pointStyle: 'circle'
+          }
+        }
+      },
+      cutout: '68%'
+    }
+  });
+});
+</script>
+{% endblock %}

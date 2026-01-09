@@ -483,5 +483,6 @@ class TaxSummarySerializer(serializers.Serializer):
         ]
         for field in monetary_fields:
             if field in instance:
-                representation[field] = str(Decimal(str(instance[field])) / Decimal('100'))
+                # representation[field] = str(Decimal(str(instance[field])) / Decimal('100'))
+                representation[field] = str(Decimal(str(instance[field])))
         return representation
