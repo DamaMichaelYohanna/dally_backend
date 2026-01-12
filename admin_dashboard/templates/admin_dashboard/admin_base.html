@@ -231,10 +231,13 @@
     </div>
 
     <div class="flex min-h-screen relative">
+        <!-- Mobile Overlay -->
+        <div id="mobile-overlay" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-40 hidden lg:hidden transition-opacity duration-300" onclick="toggleSidebar()"></div>
+
         <!-- Sidebar -->
-        <aside class="sidebar w-64 fixed left-0 top-0 h-screen flex flex-col z-50">
+        <aside id="sidebar" class="sidebar w-64 fixed left-0 top-0 h-screen flex flex-col z-50 transform -translate-x-full lg:translate-x-0 transition-transform duration-300">
             <!-- Logo -->
-            <div class="p-6 border-b border-white/5">
+            <div class="p-6 border-b border-white/5 flex justify-between items-center">
                 <a href="{% url 'admin_dashboard:dashboard' %}" class="flex items-center gap-3">
                     <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center">
                         <i class="fas fa-chart-line text-white text-lg"></i>
@@ -244,6 +247,10 @@
                         <p class="text-xs text-gray-500">Admin Panel</p>
                     </div>
                 </a>
+                <!-- Close Button (Mobile) -->
+                <button onclick="toggleSidebar()" class="lg:hidden text-gray-400 hover:text-white">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
             </div>
             
             <!-- Navigation -->
@@ -303,17 +310,24 @@
         </aside>
 
         <!-- Main Content -->
-        <main class="flex-1 ml-64">
+        <main class="flex-1 ml-0 lg:ml-64 transition-all duration-300">
             <!-- Top Header -->
-            <header class="glass sticky top-0 z-40 px-8 py-4">
+            <header class="glass sticky top-0 z-40 px-4 sm:px-8 py-4">
                 <div class="flex items-center justify-between">
-                    <div>
-                        <h2 class="text-2xl font-bold text-white">{% block page_title %}Dashboard{% endblock %}</h2>
-                        <p class="text-sm text-gray-400">{% block page_subtitle %}Monitor your platform metrics{% endblock %}</p>
+                    <div class="flex items-center gap-4">
+                        <!-- Hamburger Menu -->
+                        <button onclick="toggleSidebar()" class="lg:hidden text-white/70 hover:text-white transition-colors">
+                            <i class="fas fa-bars text-xl"></i>
+                        </button>
+                        
+                        <div>
+                            <h2 class="text-2xl font-bold text-white">{% block page_title %}Dashboard{% endblock %}</h2>
+                            <p class="text-sm text-gray-400 hidden sm:block">{% block page_subtitle %}Monitor your platform metrics{% endblock %}</p>
+                        </div>
                     </div>
                     <div class="flex items-center gap-4">
                         <!-- Last updated indicator -->
-                        <div class="flex items-center gap-2 text-sm text-gray-400">
+                        <div class="flex items-center gap-2 text-sm text-gray-400 hidden sm:flex">
                             <span class="pulse-dot w-2 h-2 bg-green-500 rounded-full"></span>
                             <span>Live</span>
                         </div>
@@ -321,7 +335,7 @@
                         <!-- Quick actions -->
                         <button onclick="location.reload()" class="glass-card px-4 py-2 rounded-lg text-sm font-medium text-white/80 hover:text-white flex items-center gap-2">
                             <i class="fas fa-sync-alt"></i>
-                            <span>Refresh</span>
+                            <span class="hidden sm:inline">Refresh</span>
                         </button>
                     </div>
                 </div>
@@ -334,6 +348,22 @@
         </main>
     </div>
 
+    <script>
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('mobile-overlay');
+            
+            // Toggle sidebar translation
+            sidebar.classList.toggle('-translate-x-full');
+            
+            // Toggle overlay
+            if (overlay.classList.contains('hidden')) {
+                overlay.classList.remove('hidden');
+            } else {
+                overlay.classList.add('hidden');
+            }
+        }
+    </script>
     {% block extra_js %}{% endblock %}
 </body>
 </html>
