@@ -23,12 +23,13 @@ from io import BytesIO
 from datetime import datetime
 from rest_framework.generics import ListAPIView, CreateAPIView
 
-from .models import Business, Transaction, TransactionItem
+from .models import Business, Transaction, TransactionItem, InventoryPeriod
 from .serializers import (
     BusinessSerializer, 
     TransactionSerializer, 
     TransactionListSerializer,
-    TaxSummarySerializer
+    TaxSummarySerializer,
+    InventoryPeriodSerializer
 )
 from .permissions import IsOwner
 from account.permissions import IsProUser
@@ -270,6 +271,7 @@ class TaxView(APIView):
         description=(
             "Calculate tax summary for a full year. Returns revenue, expenses, "
             "profit, taxable income, estimated Personal Income Tax, and optional VAT. "
+            "Now supports Inventory tracking for correct COGS calculation."
             "All amounts in Naira (NGN)."
         ),
         parameters=[
@@ -365,10 +367,17 @@ class TaxView(APIView):
         
         # Calculate tax using Nigeria 2026 calculator
         calculator = NigeriaTaxCalculator2026(vat_enabled=vat_enabled)
+        
+        # Total deductible expenses for tax = COGS + Operating Expenses
+        # Legacy expenses are assumed operating in the service, but let's just sum them here
+        total_expenses = pl_data['cogs'] + pl_data['operating_expenses']
+        
         tax_summary = calculator.calculate_tax_summary(
             total_revenue_kobo=pl_data['total_sales'],
-            total_expenses_kobo=pl_data['total_purchases'],
-            business_id=business_id
+            total_expenses_kobo=total_expenses,
+            business_id=business_id,
+            cogs_kobo=pl_data['cogs'],
+            operating_expenses_kobo=pl_data['operating_expenses']
         )
         
         # Add period information
@@ -378,6 +387,19 @@ class TaxView(APIView):
         serializer = TaxSummarySerializer(tax_summary)
         return Response(serializer.data)
 
+
+class InventoryPeriodView(generics.ListCreateAPIView):
+    """
+    Manage Inventory Periods (Closing Stock Values).
+    GET /api/inventory/periods/ - List inventory periods
+    POST /api/inventory/periods/ - Create new inventory period record
+    """
+    serializer_class = InventoryPeriodSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        user = self.context['request'].user
+        return InventoryPeriod.objects.filter(business__user=user).order_by('-period_end')
 
 
 class TransactionCreateView(generics.CreateAPIView):

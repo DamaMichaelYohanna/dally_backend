@@ -126,12 +126,14 @@ def register(request):
                     last_name=serializer.validated_data.get('last_name', '')
                 )
                 
-                # Create business for the user
-                business = Business.objects.create(
-                    user=user,
-                    name=serializer.validated_data['business_name'],
-                    description=serializer.validated_data.get('business_description', '')
-                )
+                # Create business for the user (Optional)
+                business = None
+                if serializer.validated_data.get('business_name'):
+                    business = Business.objects.create(
+                        user=user,
+                        name=serializer.validated_data['business_name'],
+                        description=serializer.validated_data.get('business_description', '')
+                    )
                 
                 # Generate JWT tokens
                 refresh = RefreshToken.for_user(user)
@@ -146,7 +148,7 @@ def register(request):
                         "html": f"""
                             <p>Hello {user.first_name or 'there'},</p>
                             <p>Welcome to Dally Bookkeeping! Your account has been successfully created.</p>
-                            <p><b>Business:</b> {business.name}<br/>
+                            {f'<p><b>Business:</b> {business.name}<br/>' if business else ''}
                             <b>Email:</b> {user.email}</p>
                             <p>You can now log in using your email address and start managing your bookkeeping records.</p>
                             <p>Best regards,<br/>Dally Bookkeeping Team</p>
@@ -170,7 +172,7 @@ def register(request):
                         'id': str(business.id),
                         'name': business.name,
                         'description': business.description
-                    },
+                    } if business else None,
                     'tokens': {
                         'access': str(refresh.access_token),
                         'refresh': str(refresh)

@@ -100,7 +100,9 @@ class NigeriaTaxCalculator2026:
         self,
         total_revenue_kobo: int,
         total_expenses_kobo: int,
-        business_id
+        business_id,
+        cogs_kobo: int = 0,
+        operating_expenses_kobo: int = 0
     ) -> Dict:
 
         revenue = Decimal(total_revenue_kobo)
@@ -119,6 +121,8 @@ class NigeriaTaxCalculator2026:
         return {
             "total_revenue": int(revenue),
             "total_expenses": int(expenses),
+            "cogs": int(cogs_kobo),
+            "operating_expenses": int(operating_expenses_kobo),
             "net_profit": int(net_profit),
             "taxable_income": int(net_profit),
             "estimated_income_tax": pit,

@@ -36,10 +36,22 @@ class Transaction(models.Model):
         ('expense', 'Expense'),
     ]
 
+    EXPENSE_TYPES = [
+        ('operating', 'Operating Expense'),      # Rent, utilities, salaries, etc.
+        ('inventory', 'Inventory Purchase'),      # Stock/goods purchased for resale
+    ]
+
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='transactions')
-    business = models.ForeignKey(Business, on_delete=models.CASCADE, related_name='transactions')
+    business = models.ForeignKey(Business, on_delete=models.CASCADE, related_name='transactions', blank=True, null=True)
     transaction_type = models.CharField(max_length=10, choices=TRANSACTION_TYPES)
+    expense_type = models.CharField(
+        max_length=20, 
+        choices=EXPENSE_TYPES, 
+        blank=True, 
+        null=True,
+        help_text="Categorize expenses for tax purposes (Operating vs Inventory)"
+    )
     date = models.DateField()
     description = models.TextField(blank=True)
     total_amount = models.DecimalField(
@@ -84,6 +96,34 @@ class Transaction(models.Model):
             self.total_amount = self.calculate_total()
         
         super().save(*args, **kwargs)
+
+
+class InventoryPeriod(models.Model):
+    """
+    Track inventory values at period boundaries for COGS calculation.
+    Used to store the 'Closing Stock' value provided by the user.
+    """
+    business = models.ForeignKey(Business, on_delete=models.CASCADE, related_name='inventory_periods')
+    period_end = models.DateField(help_text="End date of the period (e.g., 2026-12-31)")
+    closing_value = models.DecimalField(
+        max_digits=12, 
+        decimal_places=2,
+        validators=[MinValueValidator(Decimal('0.00'))],
+        help_text="Total value of unsold stock at the end of this period"
+    )
+    notes = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-period_end']
+        unique_together = ['business', 'period_end']
+        indexes = [
+            models.Index(fields=['business', 'period_end']),
+        ]
+
+    def __str__(self):
+        return f"{self.business.name} - {self.period_end}: {self.closing_value}"
 
 
 class TransactionItem(models.Model):

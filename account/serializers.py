@@ -32,7 +32,8 @@ class UserRegistrationSerializer(serializers.Serializer):
     last_name = serializers.CharField(max_length=150, required=False, allow_blank=True)
     
     # Business fields
-    business_name = serializers.CharField(max_length=255)
+    # Business fields (Optional)
+    business_name = serializers.CharField(max_length=255, required=False, allow_blank=True)
     business_description = serializers.CharField(required=False, allow_blank=True)
 
     def validate_email(self, value):
