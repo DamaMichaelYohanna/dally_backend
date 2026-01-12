@@ -398,7 +398,7 @@ class InventoryPeriodView(generics.ListCreateAPIView):
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        user = self.context['request'].user
+        user = self.request.user
         return InventoryPeriod.objects.filter(business__user=user).order_by('-period_end')
 
 

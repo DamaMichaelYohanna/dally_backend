@@ -4,6 +4,7 @@ from django.http import JsonResponse
 from django.utils import timezone
 from django.core.paginator import Paginator
 from django.db.models import Count, Sum, Q
+from django.db.models.functions import TruncDay, TruncWeek
 from django.contrib import messages
 from datetime import timedelta
 from account.models import User, Subscription, SubscriptionPlan
@@ -45,9 +46,9 @@ def get_dashboard_metrics():
     paid_count = Subscription.objects.filter(plan__name="Pro").count()
 
     # New signups
-    signups_daily = list(User.objects.extra({'day': "date(date_joined)"})
+    signups_daily = list(User.objects.annotate(day=TruncDay('date_joined'))
         .values('day').annotate(count=Count('id')).order_by('-day')[:14])
-    signups_weekly = list(User.objects.extra({'week': "strftime('%%W', date_joined)"})
+    signups_weekly = list(User.objects.annotate(week=TruncWeek('date_joined'))
         .values('week').annotate(count=Count('id')).order_by('-week')[:8])
 
     # Recent activity
@@ -56,7 +57,7 @@ def get_dashboard_metrics():
         .values('id', 'total_amount', 'created_at', 'business__name')[:10])
 
     # Daily transactions for bar chart
-    transactions_daily = list(Transaction.objects.extra({'day': "date(created_at)"})
+    transactions_daily = list(Transaction.objects.annotate(day=TruncDay('created_at'))
         .values('day').annotate(count=Count('id')).order_by('-day')[:14])
 
     return {
