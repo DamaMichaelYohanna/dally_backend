@@ -27,7 +27,9 @@ from .serializers import (
     UserRegistrationSerializer, 
     PasswordResetRequestSerializer, 
     PasswordResetSerializer,
-    UserProfileSerializer
+    UserProfileSerializer,
+    SubscriptionInitSerializer,
+    SubscriptionPlanSerializer
 )
 from bookkeeping.models import Business
 from account.models import PasswordResetOTP, User, Subscription, SubscriptionPlan
@@ -505,6 +507,20 @@ def password_reset_verify(request, uid, token):
 
 
 @extend_schema(
+    summary="List available subscription plans",
+    description="Get list of all active subscription plans.",
+    tags=["subscription"],
+    responses={200: SubscriptionPlanSerializer(many=True)}
+)
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def list_plans(request):
+    plans = SubscriptionPlan.objects.filter(is_active=True)
+    serializer = SubscriptionPlanSerializer(plans, many=True)
+    return Response(serializer.data)
+
+
+@extend_schema(
     summary="Get subscription status",
     description="Get the current subscription status for the authenticated user.",
     tags=["subscription"],
@@ -533,26 +549,38 @@ def subscription_status(request):
     summary="Initialize subscription",
     description="Initialize a new subscription using Paystack.",
     tags=["subscription"],
-    request={'type': 'object', 'properties': {'plan_id': {'type': 'string'}}},
+    request=SubscriptionInitSerializer,
     responses={200: {'type': 'object'}}
 )
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def initialize_subscription(request):
-    plan_id = request.data.get('plan_id')
-    if not plan_id:
-        return Response({"error": "plan_id is required"}, status=status.HTTP_400_BAD_REQUEST)
+    serializer = SubscriptionInitSerializer(data=request.data)
+    if not serializer.is_valid():
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+    plan_id = serializer.validated_data.get('plan_id')
     
     try:
-        plan = SubscriptionPlan.objects.get(paystack_plan_id=plan_id)
+        plan = SubscriptionPlan.objects.get(id=plan_id)
     except SubscriptionPlan.DoesNotExist:
-        return Response({"error": "Invalid plan_id"}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({"error": "Plan not found"}, status=status.HTTP_404_NOT_FOUND)
+
+    # 1. Validate plan is active
+    if not plan.is_active:
+        return Response({"error": "This plan is no longer active"}, status=status.HTTP_400_BAD_REQUEST)
+
+    # 2. Validate user is not already subscribed to THIS plan
+    # (Checking for active subscription with this specific plan)
+    existing_sub = Subscription.objects.filter(user=request.user, plan=plan, status='active').exists()
+    if existing_sub:
+        return Response({"error": "You already have an active subscription to this plan"}, status=status.HTTP_400_BAD_REQUEST)
 
     # Initialize Paystack transaction
     response = PaystackService.initialize_transaction(
         email=request.user.email,
         amount=plan.amount,
-        plan_id=plan_id
+        plan_id=plan.paystack_plan_id
     )
     
     if response.get('status'):

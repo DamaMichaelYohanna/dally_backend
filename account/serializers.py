@@ -5,7 +5,7 @@ import uuid
 import jwt
 from rest_framework import serializers
 
-from account.models import PasswordResetOTP, User
+from account.models import PasswordResetOTP, User, SubscriptionPlan
 
 
 # model serializers for users
@@ -243,3 +243,15 @@ class UserProfileSerializer(serializers.ModelSerializer):
             'is_pro': False,
             'next_payment_date': None
         }
+
+
+class SubscriptionInitSerializer(serializers.Serializer):
+    plan_id = serializers.UUIDField(required=True, help_text="Internal Plan UUID")
+
+
+class SubscriptionPlanSerializer(serializers.ModelSerializer):
+    price = serializers.IntegerField(source='amount')
+    
+    class Meta:
+        model = SubscriptionPlan
+        fields = ['id', 'name', 'price', 'interval', 'description', 'is_active']

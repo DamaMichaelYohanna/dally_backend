@@ -53,6 +53,7 @@ class User(AbstractUser):
 
 
 class SubscriptionPlan(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     name = models.CharField(max_length=100)
     paystack_plan_id = models.CharField(max_length=100, unique=True)
     amount = models.DecimalField(max_digits=12, decimal_places=2)
@@ -64,6 +65,7 @@ class SubscriptionPlan(models.Model):
         ('annually', 'Annually'),
     ])
     description = models.TextField(blank=True)
+    is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
@@ -71,6 +73,7 @@ class SubscriptionPlan(models.Model):
 
 
 class Subscription(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     STATUS_CHOICES = [
         ('active', 'Active'),
         ('non-renewing', 'Non-Renewing'),

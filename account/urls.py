@@ -14,6 +14,7 @@ from .apis import (
     initialize_subscription,
     paystack_webhook,
     profile_view,
+    list_plans,
 )
 
 urlpatterns = [
@@ -24,6 +25,7 @@ urlpatterns = [
     path('password-otp-verify/', password_otp_verify, name='password_otp_verify'),
     path('password-reset-confirm/', password_reset_confirm, name='password_reset_confirm'),
     path('change-password/', change_password, name='change_password'),
+    path('plans/', list_plans, name='list_plans'),
     path('subscription/status/', subscription_status, name='subscription_status'),
     path('subscription/initialize/', initialize_subscription, name='initialize_subscription'),
     path('paystack/webhook/', paystack_webhook, name='paystack_webhook'),
