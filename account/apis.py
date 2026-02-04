@@ -586,7 +586,10 @@ def initialize_subscription(request):
     if response.get('status'):
         return Response(response['data'])
     
-    return Response({"error": "Could not initialize subscription"}, status=status.HTTP_400_BAD_REQUEST)
+    return Response({
+        "error": "Could not initialize subscription",
+        "paystack_error": response.get('message', 'No message provided')
+    }, status=status.HTTP_400_BAD_REQUEST)
 
 
 @extend_schema(
